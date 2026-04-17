@@ -1,0 +1,3020 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DIRD / RP-12 — Gerador TCE-SP | Dr. Rafael Mendes</title>
+
+<!-- CDNs: pdf.js, html2pdf, SheetJS, Tailwind -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --navy:    #0d1b2a;
+    --navy2:   #1b2d40;
+    --teal:    #0f7a6e;
+    --teal2:   #13a094;
+    --gold:    #e8a435;
+    --gold2:   #f5c55a;
+    --red:     #c0392b;
+    --green:   #27ae60;
+    --bg:      #f0f3f7;
+    --card:    #ffffff;
+    --border:  #d2dce8;
+    --text:    #1a2535;
+    --muted:   #6b7e96;
+    --mono:    'IBM Plex Mono', monospace;
+    --sans:    'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+    color: #fff;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,.35);
+  }
+  .logo { display: flex; align-items: center; gap: .75rem; }
+  .logo-badge {
+    background: var(--teal);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: .7rem;
+    font-weight: 600;
+    padding: .25rem .55rem;
+    border-radius: 4px;
+    letter-spacing: .08em;
+  }
+  .logo-text { font-size: 1rem; font-weight: 700; letter-spacing: -.01em; }
+  .logo-sub { font-size: .72rem; color: #8ba4bf; font-weight: 300; }
+  .header-actions { display: flex; gap: .5rem; }
+
+  /* ── STEPPER ── */
+  .stepper {
+    background: var(--navy2);
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    border-bottom: 2px solid var(--teal);
+    overflow-x: auto;
+  }
+  .step-btn {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .7rem 1.4rem;
+    font-family: var(--sans);
+    font-size: .78rem;
+    font-weight: 600;
+    color: #8ba4bf;
+    background: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .2s, background .2s;
+    position: relative;
+  }
+  .step-btn.active {
+    color: var(--gold);
+    background: rgba(232,164,53,.08);
+  }
+  .step-btn.active::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+  }
+  .step-btn.done { color: var(--teal2); }
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .65rem;
+    font-family: var(--mono);
+    flex-shrink: 0;
+  }
+  .step-btn.done .step-num { background: var(--teal2); border-color: var(--teal2); color: #fff; }
+  .step-btn.active .step-num { background: var(--gold); border-color: var(--gold); color: var(--navy); }
+
+  /* ── MAIN ── */
+  .main { max-width: 1280px; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; }
+
+  /* ── PANELS ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,.05);
+  }
+  .card-title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 1rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .card-title::before {
+    content: '';
+    width: 4px; height: 1.1em;
+    background: var(--teal);
+    border-radius: 2px;
+  }
+
+  /* ── FORM GRID ── */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .85rem; }
+  .form-group { display: flex; flex-direction: column; gap: .3rem; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  input, select, textarea {
+    font-family: var(--sans);
+    font-size: .88rem;
+    padding: .55rem .8rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: #f7f9fc;
+    color: var(--text);
+    transition: border .2s, box-shadow .2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(15,122,110,.12);
+    background: #fff;
+  }
+  input.error { border-color: var(--red); }
+  textarea { resize: vertical; min-height: 60px; }
+
+  /* ── UPLOAD ZONES ── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--teal);
+    background: rgba(15,122,110,.04);
+  }
+  .upload-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+    border: none; background: none;
+  }
+  .upload-icon { font-size: 2rem; margin-bottom: .5rem; }
+  .upload-label { font-size: .88rem; font-weight: 600; color: var(--teal); }
+  .upload-hint { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+
+  /* ── FILE PILLS ── */
+  .file-list { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+  .file-pill {
+    display: flex; align-items: center; gap: .4rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: .25rem .6rem .25rem .4rem;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .file-pill .pill-icon { font-size: .9rem; }
+  .file-pill .pill-remove {
+    cursor: pointer; color: var(--muted); font-size: .8rem;
+    margin-left: .15rem; transition: color .15s;
+  }
+  .file-pill .pill-remove:hover { color: var(--red); }
+  .file-pill.ok { border-color: var(--green); }
+  .file-pill.err { border-color: var(--red); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .6rem 1.25rem;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: .83rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all .18s;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--teal);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(15,122,110,.25);
+  }
+  .btn-primary:hover { background: var(--teal2); box-shadow: 0 4px 16px rgba(15,122,110,.35); }
+  .btn-secondary { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--teal); color: var(--teal); }
+  .btn-gold { background: var(--gold); color: var(--navy); }
+  .btn-gold:hover { background: var(--gold2); }
+  .btn-danger { background: #fef2f2; color: var(--red); border: 1.5px solid #fca5a5; }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-sm { padding: .38rem .8rem; font-size: .75rem; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    height: 4px; background: var(--border); border-radius: 2px;
+    overflow: hidden; margin: .5rem 0;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--teal), var(--teal2));
+    transition: width .4s ease;
+  }
+
+  /* ── MATCH TABLE ── */
+  .match-table-wrap { overflow-x: auto; margin-top: .75rem; }
+  .match-table {
+    width: 100%; border-collapse: collapse;
+    font-size: .8rem;
+  }
+  .match-table th {
+    background: var(--navy);
+    color: #fff;
+    padding: .55rem .75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+  .match-table td {
+    padding: .5rem .75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .match-table tr:hover td { background: #f5f8fc; }
+  .match-table .mono { font-family: var(--mono); font-size: .78rem; }
+  .match-table .val { font-family: var(--mono); color: var(--teal); font-weight: 600; }
+  .match-table .badge {
+    display: inline-flex; align-items: center;
+    padding: .15rem .45rem;
+    border-radius: 4px;
+    font-size: .68rem; font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+
+  /* ── CATEGORY SELECTOR ── */
+  .cat-select {
+    padding: .3rem .5rem;
+    font-size: .75rem;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    min-width: 200px;
+  }
+
+  /* ── RP-12 PREVIEW (official style) ── */
+  #rp12-preview {
+    background: #fff;
+    font-family: 'Times New Roman', serif;
+    font-size: 10pt;
+    color: #000;
+    padding: 1.5cm 2cm;
+    max-width: 21cm;
+    margin: 0 auto;
+    box-shadow: 0 4px 30px rgba(0,0,0,.15);
+  }
+  .rp12-title {
+    text-align: center;
+    font-size: 11pt;
+    font-weight: bold;
+    margin-bottom: 4pt;
+    text-transform: uppercase;
+  }
+  .rp12-subtitle {
+    text-align: center;
+    font-size: 10pt;
+    font-weight: bold;
+    margin-bottom: 12pt;
+    text-transform: uppercase;
+  }
+  .rp12-info { margin-bottom: 3pt; font-size: 9.5pt; }
+  .rp12-section-title {
+    text-align: center;
+    font-size: 10pt;
+    font-weight: bold;
+    margin: 12pt 0 6pt;
+    text-transform: uppercase;
+    border-top: 1px solid #000;
+    padding-top: 6pt;
+  }
+  .rp12-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 8.5pt; margin-bottom: 8pt;
+  }
+  .rp12-table th, .rp12-table td {
+    border: 1px solid #000;
+    padding: 3pt 5pt;
+    vertical-align: middle;
+  }
+  .rp12-table th {
+    background: #e8e8e8;
+    font-weight: bold;
+    text-align: center;
+    font-size: 8pt;
+  }
+  .rp12-table .r { text-align: right; }
+  .rp12-table .c { text-align: center; }
+  .rp12-table .total-row { font-weight: bold; background: #f0f0f0; }
+  .rp12-note { font-size: 7.5pt; margin: 2pt 0; }
+  .rp12-saldo-table { width: 60%; margin-left: auto; border-collapse: collapse; font-size: 9pt; }
+  .rp12-saldo-table td { padding: 3pt 6pt; border: 1px solid #000; }
+  .rp12-saldo-table .lbl { font-weight: bold; }
+  .rp12-saldo-table .val { text-align: right; font-family: 'Courier New', monospace; }
+  .rp12-sig { margin-top: 20pt; }
+
+  /* ── LOGS / AUDIT ── */
+  .log-box {
+    background: var(--navy);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--mono);
+    font-size: .73rem;
+    color: #8ba4bf;
+    max-height: 220px;
+    overflow-y: auto;
+    line-height: 1.7;
+  }
+  .log-ok   { color: #4ade80; }
+  .log-warn { color: var(--gold2); }
+  .log-err  { color: #f87171; }
+  .log-info { color: #60a5fa; }
+
+  /* ── TOAST ── */
+  #toast-container {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    z-index: 9999; display: flex; flex-direction: column; gap: .5rem;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--navy);
+    color: #fff;
+    padding: .7rem 1.2rem;
+    border-radius: 10px;
+    font-size: .82rem;
+    font-weight: 600;
+    border-left: 4px solid var(--teal);
+    box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    animation: slideIn .3s ease;
+    max-width: 360px;
+  }
+  .toast.warn { border-color: var(--gold); }
+  .toast.err  { border-color: var(--red); }
+  @keyframes slideIn { from { transform: translateX(40px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: .75rem; margin-bottom: 1.25rem;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    display: flex; flex-direction: column; gap: .2rem;
+  }
+  .stat-label { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .stat-value { font-family: var(--mono); font-size: 1.25rem; font-weight: 600; color: var(--navy); }
+  .stat-sub   { font-size: .7rem; color: var(--muted); }
+
+  /* ── SECTION ACTIONS ── */
+  .section-actions {
+    display: flex; gap: .6rem; flex-wrap: wrap;
+    margin-bottom: 1rem; align-items: center;
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.55); z-index: 500;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 1.75rem;
+    max-width: 520px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  }
+  .modal-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem; color: var(--navy); }
+  .modal-actions { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.25rem; }
+
+  /* ── REPASSE TABLE ── */
+  .repasse-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr auto;
+    gap: .5rem; align-items: center; margin-bottom: .4rem;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:640px){
+    .app-header { padding: 0 1rem; }
+    .main { padding: 1rem 1rem 3rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .repasse-row { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── CNPJ LOOKUP ── */
+  .cnpj-wrap { display:flex; gap:.4rem; align-items:flex-end; }
+  .cnpj-wrap input { flex:1; }
+  .cnpj-status {
+    font-size:.72rem; margin-top:.25rem;
+    min-height:1rem; font-weight:600;
+  }
+  .cnpj-status.ok   { color:var(--green); }
+  .cnpj-status.err  { color:var(--red); }
+  .cnpj-status.loading { color:var(--muted); }
+  .auto-filled { background:#e8f7f0 !important; border-color:var(--green) !important; }
+
+  /* ── CONVENIO SEARCH ── */
+  .conv-search-wrap { display:flex; gap:.4rem; margin-bottom:1rem; }
+  .conv-result-item {
+    border:1px solid var(--border); border-radius:8px;
+    padding:.75rem 1rem; margin-bottom:.5rem;
+    cursor:pointer; transition:all .15s;
+    background:var(--card);
+    display:flex; flex-direction:column; gap:.2rem;
+  }
+  .conv-result-item:hover, .conv-result-item.selected {
+    border-color:var(--teal); background:#f0faf9;
+  }
+  .conv-result-item.selected { box-shadow:0 0 0 2px var(--teal); }
+  .conv-title { font-weight:700; font-size:.85rem; color:var(--navy); }
+  .conv-meta  { font-size:.72rem; color:var(--muted); display:flex; gap:1rem; flex-wrap:wrap; }
+  .conv-badge { 
+    display:inline-flex; align-items:center; gap:.3rem;
+    font-size:.68rem; font-weight:700; padding:.15rem .45rem;
+    border-radius:4px; background:#dbeafe; color:#1e40af;
+  }
+  .conv-results-box {
+    max-height:380px; overflow-y:auto;
+    border:1px solid var(--border); border-radius:8px; padding:.5rem;
+    background:#f8fafc;
+  }
+  .conv-loading { text-align:center; padding:1.5rem; color:var(--muted); font-size:.82rem; }
+  
+  /* ── CATEGORIA PREVIEW (Aba 6) ── */
+  .cat-preview-item {
+    display:grid; grid-template-columns:auto 1fr auto auto auto;
+    gap:.5rem; align-items:center;
+    padding:.45rem .6rem; border:1px solid var(--border); border-radius:6px;
+    margin-bottom:.3rem; font-size:.78rem; background:var(--card);
+    transition: background .15s;
+  }
+  .cat-preview-item:hover { background:#f5f8fc; }
+  .cat-preview-item .nf-num { font-family:var(--mono); font-size:.7rem; color:var(--muted); }
+  .cat-preview-item .nf-val { font-family:var(--mono); color:var(--teal); font-weight:700; white-space:nowrap; }
+  .cat-preview-item .cat-sel { min-width:200px; font-size:.75rem; padding:.25rem .4rem; }
+  .cat-preview-item .auto-tag {
+    font-size:.62rem; font-weight:700; padding:.1rem .35rem; border-radius:3px;
+    background:#fef3c7; color:#92400e; white-space:nowrap;
+  }
+  .cat-preview-item .auto-tag.confirmed { background:#d1fae5; color:#065f46; }
+  .cat-validate-bar {
+    display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;
+    padding:.75rem 1rem; background:var(--navy); border-radius:8px; margin-bottom:1rem;
+    font-size:.8rem; color:#8ba4bf;
+  }
+  .cat-validate-bar strong { color:#fff; }
+
+  /* ── SPINNER ── */
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    body > *:not(#rp12-print-area) { display: none !important; }
+    #rp12-print-area { display: block !important; }
+  }
+
+  /* ── CONCILIATION DRAG ── */
+  .concil-col {
+    min-height: 100px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: .5rem;
+    transition: border-color .2s, background .2s;
+  }
+  .concil-col.drag-target { border-color: var(--teal); background: rgba(15,122,110,.05); }
+  .concil-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .4rem .6rem;
+    margin-bottom: .3rem;
+    font-size: .75rem;
+    cursor: grab;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .concil-item:active { cursor: grabbing; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════ HEADER ════════════════════════ -->
+<header class="app-header">
+  <div class="logo">
+    <span class="logo-badge">TCE-SP</span>
+    <div>
+      <div class="logo-text">DIRD / RP-12 · Gerador Automático</div>
+      <div class="logo-sub">IN 01/2024 · IN 02/2016 · Marco Regulatório · Lei 13.019/2014</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary btn-sm" onclick="saveProject()">💾 Salvar</button>
+    <button class="btn btn-secondary btn-sm" onclick="loadProject()">📂 Carregar</button>
+    <button class="btn btn-secondary btn-sm" onclick="newProject()">🆕 Novo</button>
+  </div>
+</header>
+
+<!-- ════════════════════════ STEPPER ════════════════════════ -->
+<nav class="stepper" id="stepper">
+  <button class="step-btn active" onclick="goStep(0)" data-step="0">
+    <span class="step-num">1</span> Identificação
+  </button>
+  <button class="step-btn" onclick="goStep(1)" data-step="1">
+    <span class="step-num">2</span> Recursos / Convênio
+  </button>
+  <button class="step-btn" onclick="goStep(2)" data-step="2">
+    <span class="step-num">3</span> Notas Fiscais
+  </button>
+  <button class="step-btn" onclick="goStep(3)" data-step="3">
+    <span class="step-num">4</span> Extrato Bancário
+  </button>
+  <button class="step-btn" onclick="goStep(4)" data-step="4">
+    <span class="step-num">5</span> Conciliação
+  </button>
+  <button class="step-btn" onclick="goStep(5)" data-step="5">
+    <span class="step-num">6</span> RP-12 / DIRD
+  </button>
+</nav>
+
+<!-- ════════════════════════ MAIN ════════════════════════ -->
+<main class="main">
+
+  <!-- ══ PAINEL 0: IDENTIFICAÇÃO ══ -->
+  <div class="panel active" id="panel-0">
+    <div class="card">
+      <div class="card-title">Identificação do Convênio / Termo</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tipo de Instrumento</label>
+          <select id="tipo_instrumento">
+            <option value="CONVÊNIO">Convênio</option>
+            <option value="TERMO DE COLABORAÇÃO">Termo de Colaboração</option>
+            <option value="TERMO DE FOMENTO">Termo de Fomento</option>
+            <option value="CONTRATO DE GESTÃO">Contrato de Gestão</option>
+            <option value="TERMO ADITIVO">Termo Aditivo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Número do Instrumento</label>
+          <input type="text" id="num_instrumento" placeholder="Ex: 425/2025" value="425/2025">
+        </div>
+        <div class="form-group">
+          <label>Data de Assinatura</label>
+          <input type="date" id="data_assinatura" value="2025-03-14">
+        </div>
+        <div class="form-group">
+          <label>Data de Vigência (Término)</label>
+          <input type="date" id="data_vigencia" value="2025-12-31">
+        </div>
+        <div class="form-group">
+          <label>Exercício de Referência</label>
+          <input type="number" id="exercicio" value="2025" min="2000" max="2099">
+        </div>
+        <div class="form-group">
+          <label>Origem dos Recursos</label>
+          <select id="origem_recursos">
+            <option value="ESTADUAL">Estadual</option>
+            <option value="FEDERAL">Federal</option>
+            <option value="MUNICIPAL">Municipal</option>
+            <option value="PRÓPRIO">Recursos Próprios</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Órgão Concessor</label>
+          <input type="text" id="orgao_concessor" placeholder="Ex: SECRETARIA DE ESTADO DA SAÚDE DE SÃO PAULO" value="SECRETARIA DE ESTADO DA SAÚDE DE SÃO PAULO">
+        </div>
+        <div class="form-group full">
+          <label>Objeto do Convênio</label>
+          <textarea id="objeto" placeholder="Descreva o objeto conforme consta no instrumento...">Custeio - Aquisição de material de consumo e prestação de serviços</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Identificação da Entidade Beneficiária</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Razão Social</label>
+          <input type="text" id="beneficiario" value="BENEFICÊNCIA NIPO-BRASILEIRA DE SÃO PAULO – HOSPITAL SÃO MIGUEL ARCANJO">
+        </div>
+        <div class="form-group">
+          <label>CNPJ <span style="color:var(--teal);font-weight:400;text-transform:none;font-size:.68rem">→ preenche dados automaticamente</span></label>
+          <div class="cnpj-wrap">
+            <input type="text" id="cnpj" placeholder="00.000.000/0000-00" value="60.992.427/0018-93" oninput="formatCNPJ(this)" onblur="lookupCNPJ()">
+            <button class="btn btn-secondary btn-sm" onclick="lookupCNPJ()" title="Consultar Receita Federal">🔍</button>
+          </div>
+          <div class="cnpj-status" id="cnpj-status"></div>
+        </div>
+        <div class="form-group full">
+          <label>Endereço Completo e CEP</label>
+          <input type="text" id="endereco" value="Rua Tadashi Takenaka, 100 - Centro, na cidade de São Miguel Arcanjo, CEP 18230-000">
+        </div>
+        <div class="form-group">
+          <label>Responsável Legal</label>
+          <input type="text" id="responsavel" value="Paulo Seichiti Saita">
+        </div>
+        <div class="form-group">
+          <label>Cargo do Responsável</label>
+          <input type="text" id="cargo_responsavel" value="Diretor-Presidente">
+        </div>
+        <div class="form-group">
+          <label>Cidade e Data da Assinatura do DIRD</label>
+          <input type="text" id="local_data_assinatura" value="São Miguel Arcanjo - SP">
+        </div>
+        <div class="form-group">
+          <label>E-mail Institucional</label>
+          <input type="email" id="email" value="gerenciaadm@hospitalsma.org.br">
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="tel" id="telefone" value="(15) 3279-8300">
+        </div>
+      </div>
+    </div>
+
+    <!-- Aditivos -->
+    <div class="card">
+      <div class="card-title">Termos Aditivos (opcional)</div>
+      <div id="aditivos-list"></div>
+      <button class="btn btn-secondary btn-sm" onclick="addAditivo()">+ Adicionar Aditivo</button>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+      <button class="btn btn-primary" onclick="goStep(1)">Próximo: Recursos →</button>
+    </div>
+  </div>
+
+  <!-- ══ PAINEL 1: RECURSOS ══ -->
+  <div class="panel" id="panel-1">
+
+    <!-- BUSCA DIÁRIO OFICIAL -->
+    <div class="card">
+      <div class="card-title">🔎 Buscar Convênio no Diário Oficial do Estado de SP</div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:.85rem;">
+        Pesquise pelo número do instrumento ou CNPJ da entidade para localizar automaticamente convênios/termos publicados no DOE-SP dos últimos 10 anos.
+      </p>
+      <div class="conv-search-wrap">
+        <input type="text" id="doe-search-input" placeholder="Ex: 425/2025 ou CNPJ 60.992.427/0018 ou nome da entidade"
+          style="flex:1" onkeydown="if(event.key==='Enter')searchDOE()">
+        <button class="btn btn-primary" onclick="searchDOE()">🔍 Buscar no DOE-SP</button>
+        <button class="btn btn-secondary" onclick="clearDOEResults()">✕ Limpar</button>
+      </div>
+      <div id="doe-results-wrap" style="display:none; margin-top:.75rem;">
+        <div style="font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.4rem;">
+          Resultados encontrados — clique para selecionar e preencher automaticamente
+        </div>
+        <div class="conv-results-box" id="doe-results-box"></div>
+      </div>
+      <div id="doe-selected-info" style="display:none; margin-top:.75rem; padding:.75rem 1rem; background:#e8f7f0; border-radius:8px; font-size:.8rem; border:1px solid var(--green);">
+        <strong style="color:var(--green);">✓ Convênio selecionado:</strong> <span id="doe-selected-label"></span>
+        <br><span style="color:var(--muted);font-size:.72rem;">Campos de repasse preenchidos automaticamente. Revise os valores abaixo.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Demonstrativo dos Recursos Disponíveis no Exercício</div>
+
+      <div style="margin-bottom:1rem;">
+        <div style="font-size:.8rem; font-weight:700; color:var(--navy); margin-bottom:.6rem;">Repasses Públicos no Exercício</div>
+        <div id="repasses-list"></div>
+        <button class="btn btn-secondary btn-sm" onclick="addRepasse()">+ Adicionar Repasse</button>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>(A) Saldo do Exercício Anterior (R$)</label>
+          <input type="number" id="saldo_anterior" value="0" step="0.01" min="0" oninput="calcRecursos()">
+        </div>
+        <div class="form-group">
+          <label>(C) Receitas com Aplicações Financeiras (R$)</label>
+          <input type="number" id="aplic_financeiras" value="106700.83" step="0.01" min="0" oninput="calcRecursos()">
+        </div>
+        <div class="form-group">
+          <label>(D) Outras Receitas da Execução (R$)</label>
+          <input type="number" id="outras_receitas" value="0" step="0.01" min="0" oninput="calcRecursos()">
+        </div>
+        <div class="form-group">
+          <label>(F) Recursos Próprios da Entidade (R$)</label>
+          <input type="number" id="recursos_proprios" value="0" step="0.01" min="0" oninput="calcRecursos()">
+        </div>
+      </div>
+
+      <div style="background:var(--navy); border-radius:10px; padding:1rem 1.25rem; margin-top:1rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:.75rem;">
+        <div style="color:#8ba4bf; font-size:.75rem; font-weight:700; text-transform:uppercase;">
+          (B) Total Repasses<br>
+          <span style="font-family:var(--mono); font-size:1.15rem; color:var(--gold)" id="total_repasses_display">R$ 1.500.000,00</span>
+        </div>
+        <div style="color:#8ba4bf; font-size:.75rem; font-weight:700; text-transform:uppercase;">
+          (E) Total Recursos Públicos (A+B+C+D)<br>
+          <span style="font-family:var(--mono); font-size:1.15rem; color:var(--teal2)" id="total_publico_display">R$ 1.606.700,83</span>
+        </div>
+        <div style="color:#8ba4bf; font-size:.75rem; font-weight:700; text-transform:uppercase;">
+          (G) Total Disponível (E+F)<br>
+          <span style="font-family:var(--mono); font-size:1.15rem; color:#4ade80" id="total_disponivel_display">R$ 1.606.700,83</span>
+        </div>
+      </div>
+
+      <div style="margin-top:1rem; font-size:.78rem; color:var(--muted);">
+        <strong>Nota (2):</strong> Incluir valores previstos no exercício anterior e repassados neste exercício.<br>
+        <strong>Nota (3):</strong> Receitas com estacionamento, aluguéis, entre outras.
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; margin-top:1rem; flex-wrap:wrap; gap:.5rem;">
+      <button class="btn btn-secondary" onclick="goStep(0)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goStep(2)">Próximo: Notas Fiscais →</button>
+    </div>
+  </div>
+
+  <!-- ══ PAINEL 2: NOTAS FISCAIS ══ -->
+  <div class="panel" id="panel-2">
+    <div class="card">
+      <div class="card-title">Importar Notas Fiscais</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+        <div>
+          <div style="font-size:.8rem; font-weight:700; margin-bottom:.5rem; color:var(--navy);">📄 XML de NF-e (padrão nacional)</div>
+          <div class="upload-zone" id="xml-zone">
+            <input type="file" multiple accept=".xml" onchange="handleNFXML(event)" id="xml-input">
+            <div class="upload-icon">🗂️</div>
+            <div class="upload-label">Arraste ou clique para selecionar XMLs</div>
+            <div class="upload-hint">Múltiplos arquivos · NF-e padrão SEFAZ</div>
+          </div>
+          <div class="file-list" id="xml-files"></div>
+        </div>
+        <div>
+          <div style="font-size:.8rem; font-weight:700; margin-bottom:.5rem; color:var(--navy);">📋 PDF de DANFE</div>
+          <div class="upload-zone" id="danfe-zone">
+            <input type="file" multiple accept=".pdf" onchange="handleDANFE(event)" id="danfe-input">
+            <div class="upload-icon">📑</div>
+            <div class="upload-label">Arraste ou clique para selecionar PDFs</div>
+            <div class="upload-hint">DANFE · Cupom Fiscal · Recibo</div>
+          </div>
+          <div class="file-list" id="danfe-files"></div>
+        </div>
+      </div>
+
+      <div class="progress-bar" id="nf-progress-bar" style="display:none;">
+        <div class="progress-fill" id="nf-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Entrada Manual -->
+    <div class="card">
+      <div class="card-title">Lançamento Manual / Planilha CSV</div>
+      <div style="margin-bottom:.75rem; display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;">
+        <button class="btn btn-secondary btn-sm" onclick="addNFManual()">+ Nova Nota/Despesa</button>
+        <button class="btn btn-secondary btn-sm" onclick="importCSV()">📊 Importar CSV/Excel</button>
+        <input type="file" id="csv-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSVImport(event)">
+        <button class="btn btn-secondary btn-sm" onclick="downloadTemplateCSV()">⬇ Template CSV</button>
+      </div>
+      <div class="match-table-wrap">
+        <table class="match-table" id="nf-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Data Emissão</th>
+              <th>Nº Documento</th>
+              <th>Fornecedor/Credor</th>
+              <th>CNPJ/CPF</th>
+              <th>Valor (R$)</th>
+              <th>Categoria RP-12</th>
+              <th>Descrição</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="nf-tbody"></tbody>
+        </table>
+      </div>
+      <div id="nf-empty" style="text-align:center; padding:2rem; color:var(--muted); font-size:.85rem;">
+        Nenhuma nota importada ainda. Use os campos acima para adicionar despesas.
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; margin-top:1rem; flex-wrap:wrap; gap:.5rem;">
+      <button class="btn btn-secondary" onclick="goStep(1)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goStep(3)">Próximo: Extrato Bancário →</button>
+    </div>
+  </div>
+
+  <!-- ══ PAINEL 3: EXTRATO BANCÁRIO ══ -->
+  <div class="panel" id="panel-3">
+    <div class="card">
+      <div class="card-title">Importar Extrato Bancário</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+        <div>
+          <div style="font-size:.8rem; font-weight:700; margin-bottom:.5rem; color:var(--navy);">📁 PDF do Extrato</div>
+          <div class="upload-zone" id="extrato-pdf-zone">
+            <input type="file" multiple accept=".pdf" onchange="handleExtratoPDF(event)" id="extrato-pdf-input">
+            <div class="upload-icon">🏦</div>
+            <div class="upload-label">Arraste o PDF do extrato bancário</div>
+            <div class="upload-hint">Itaú · Bradesco · Santander · Caixa · BB · Outros</div>
+          </div>
+          <div class="file-list" id="extrato-pdf-files"></div>
+        </div>
+        <div>
+          <div style="font-size:.8rem; font-weight:700; margin-bottom:.5rem; color:var(--navy);">📊 CSV/OFX do Extrato</div>
+          <div class="upload-zone" id="extrato-csv-zone">
+            <input type="file" multiple accept=".csv,.ofx,.txt,.xlsx" onchange="handleExtratoCSV(event)" id="extrato-csv-input">
+            <div class="upload-icon">📈</div>
+            <div class="upload-label">Arraste CSV/OFX/Excel</div>
+            <div class="upload-hint">Exportação do internet banking</div>
+          </div>
+          <div class="file-list" id="extrato-csv-files"></div>
+        </div>
+      </div>
+      <div class="progress-bar" id="ext-progress-bar" style="display:none;">
+        <div class="progress-fill" id="ext-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Lançamento manual do extrato -->
+    <div class="card">
+      <div class="card-title">Lançamentos do Extrato</div>
+      <div style="margin-bottom:.75rem; display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;">
+        <button class="btn btn-secondary btn-sm" onclick="addExtratoManual()">+ Novo Lançamento</button>
+        <span style="font-size:.75rem; color:var(--muted);">Apenas débitos (pagamentos) são relevantes para o RP-12.</span>
+      </div>
+      <div class="match-table-wrap">
+        <table class="match-table" id="extrato-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Data</th>
+              <th>Histórico / Descrição</th>
+              <th>Nº Doc / Cheque</th>
+              <th>Valor Déb. (R$)</th>
+              <th>Valor Cred. (R$)</th>
+              <th>Saldo (R$)</th>
+              <th>Conciliado</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="extrato-tbody"></tbody>
+        </table>
+      </div>
+      <div id="extrato-empty" style="text-align:center; padding:2rem; color:var(--muted); font-size:.85rem;">
+        Nenhum lançamento importado ainda. Importe um extrato ou adicione manualmente.
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; margin-top:1rem; flex-wrap:wrap; gap:.5rem;">
+      <button class="btn btn-secondary" onclick="goStep(2)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goStep(4)">Próximo: Conciliação →</button>
+    </div>
+  </div>
+
+  <!-- ══ PAINEL 4: CONCILIAÇÃO ══ -->
+  <div class="panel" id="panel-4">
+    <div class="stats-row" id="concil-stats"></div>
+
+    <div class="section-actions">
+      <button class="btn btn-primary" onclick="runAutoMatch()">⚡ Conciliação Automática</button>
+      <button class="btn btn-secondary" onclick="clearMatches()">🗑 Limpar Conciliação</button>
+      <button class="btn btn-gold" onclick="exportAuditLog()">📋 Exportar Log de Auditoria</button>
+    </div>
+
+    <!-- Resultado da Conciliação -->
+    <div class="card">
+      <div class="card-title">Resultado da Conciliação</div>
+      <div class="match-table-wrap">
+        <table class="match-table" id="concil-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>NF / Documento</th>
+              <th>Fornecedor</th>
+              <th>Data NF</th>
+              <th>Valor NF (R$)</th>
+              <th>Data Pgto</th>
+              <th>Valor Pgto (R$)</th>
+              <th>Nº Doc. Bancário</th>
+              <th>Score</th>
+              <th>Categoria</th>
+              <th>Status</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="concil-tbody"></tbody>
+        </table>
+      </div>
+      <div id="concil-empty" style="text-align:center; padding:2rem; color:var(--muted); font-size:.85rem;">
+        Execute a conciliação automática ou vincule manualmente NFs ao extrato.
+      </div>
+    </div>
+
+    <!-- Não conciliados -->
+    <div class="card" id="unmatched-card" style="display:none;">
+      <div class="card-title">⚠️ Itens Sem Conciliação</div>
+      <div id="unmatched-list"></div>
+    </div>
+
+    <!-- Log de Auditoria -->
+    <div class="card">
+      <div class="card-title">🔍 Log de Auditoria</div>
+      <div class="log-box" id="audit-log">
+        <span class="log-info">▶ Sistema pronto. Execute a conciliação automática para iniciar.</span>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; margin-top:1rem; flex-wrap:wrap; gap:.5rem;">
+      <button class="btn btn-secondary" onclick="goStep(3)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goStep(5)">Gerar RP-12 / DIRD →</button>
+    </div>
+  </div>
+
+  <!-- ══ PAINEL 5: RP-12 / DIRD ══ -->
+  <div class="panel" id="panel-5">
+
+    <!-- Pré-classificação automática com validação -->
+    <div class="card" id="cat-preview-card">
+      <div class="card-title">🤖 Pré-classificação Automática – Validar e Confirmar</div>
+
+      <div class="cat-validate-bar">
+        <strong id="cv-total">0 despesas</strong> identificadas automaticamente.
+        Revise a categoria de cada item e clique em
+        <strong>✓ Confirmar todas</strong> ou ajuste individualmente.
+        <button class="btn btn-primary btn-sm" onclick="confirmAllCategories()" style="margin-left:auto">✓ Confirmar todas</button>
+        <button class="btn btn-secondary btn-sm" onclick="rerunAutoCateg()">🔄 Re-classificar</button>
+      </div>
+
+      <div id="cat-preview-list" style="max-height:420px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Classificação das despesas por categoria -->
+    <div class="card">
+      <div class="card-title">Classificação por Categoria do RP-12</div>
+      <div class="match-table-wrap">
+        <table class="match-table" id="cat-table">
+          <thead>
+            <tr>
+              <th>Categoria / Finalidade da Despesa</th>
+              <th>Desp. Exercícios Ant. Pagas Neste (H)</th>
+              <th>Desp. Neste Exercício Pagas Neste (I)</th>
+              <th>Total Pago Neste Exercício (J=H+I)</th>
+              <th>A Pagar em Exercícios Seguintes</th>
+            </tr>
+          </thead>
+          <tbody id="cat-tbody"></tbody>
+          <tfoot>
+            <tr style="font-weight:bold; background:#f0f0f0;">
+              <td>TOTAL</td>
+              <td class="r mono" id="cat-tot-H">R$ 0,00</td>
+              <td class="r mono" id="cat-tot-I">R$ 0,00</td>
+              <td class="r mono" id="cat-tot-J">R$ 0,00</td>
+              <td class="r mono" id="cat-tot-K">R$ 0,00</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Despesas financeiras / notas de rodapé -->
+    <div class="card">
+      <div class="card-title">Notas de Rodapé e Observações</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Nota sobre Despesas Financeiras / Tarifas Bancárias</label>
+          <textarea id="nota_fin" placeholder="Ex: Não permitido conforme cláusula do Convênio. Pago com recurso próprio da beneficiária..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Nota sobre Descontos / Multas (conforme Nota 9 do modelo)</label>
+          <textarea id="nota_desc" placeholder="Se houver diferença entre despesas contabilizadas e pagas por desconto/multa, descreva aqui..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Outras Observações</label>
+          <textarea id="nota_outras" placeholder="Demais informações relevantes para a prestação de contas..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-actions">
+      <button class="btn btn-primary" onclick="generateRP12()">🔄 Gerar / Atualizar RP-12</button>
+      <button class="btn btn-gold" onclick="exportPDF()">📄 Exportar PDF Oficial</button>
+      <button class="btn btn-secondary" onclick="exportExcel()">📊 Exportar Excel</button>
+      <button class="btn btn-secondary" onclick="exportJSON()">💾 Exportar JSON (backup)</button>
+    </div>
+
+    <!-- PREVIEW RP-12 -->
+    <div id="rp12-preview">
+      <div style="text-align:center; padding:3rem; color:var(--muted); font-family:var(--sans);">
+        Clique em "Gerar / Atualizar RP-12" para visualizar o documento oficial.
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ════════════════════════ MODALS ════════════════════════ -->
+
+<!-- Modal: Editar NF -->
+<div class="modal-overlay" id="modal-nf">
+  <div class="modal">
+    <div class="modal-title">Editar Nota Fiscal / Despesa</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Data Emissão</label>
+        <input type="date" id="m-data">
+      </div>
+      <div class="form-group">
+        <label>Nº Documento</label>
+        <input type="text" id="m-num">
+      </div>
+      <div class="form-group full">
+        <label>Fornecedor / Credor</label>
+        <input type="text" id="m-fornecedor">
+      </div>
+      <div class="form-group">
+        <label>CNPJ/CPF</label>
+        <input type="text" id="m-cnpj">
+      </div>
+      <div class="form-group">
+        <label>Valor Total (R$)</label>
+        <input type="number" id="m-valor" step="0.01">
+      </div>
+      <div class="form-group full">
+        <label>Categoria RP-12</label>
+        <select id="m-categoria" class="cat-select"></select>
+      </div>
+      <div class="form-group">
+        <label>Col. (H) Desp. Ant. pagas neste (R$)</label>
+        <input type="number" id="m-colH" step="0.01" value="0">
+      </div>
+      <div class="form-group">
+        <label>Col. (I) Desp. neste pagas neste (R$)</label>
+        <input type="number" id="m-colI" step="0.01" value="0">
+      </div>
+      <div class="form-group">
+        <label>A pagar ex. seguintes (R$)</label>
+        <input type="number" id="m-aPagar" step="0.01" value="0">
+      </div>
+      <div class="form-group full">
+        <label>Descrição / Observação</label>
+        <textarea id="m-desc"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-nf')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveNFModal()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Vincular manualmente -->
+<div class="modal-overlay" id="modal-link">
+  <div class="modal">
+    <div class="modal-title">Vincular NF a Lançamento do Extrato</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Nota Fiscal</label>
+        <select id="link-nf" style="font-size:.82rem;"></select>
+      </div>
+      <div class="form-group full">
+        <label>Lançamento do Extrato</label>
+        <select id="link-ext" style="font-size:.82rem;"></select>
+      </div>
+      <div class="form-group">
+        <label>Data do Pagamento</label>
+        <input type="date" id="link-data">
+      </div>
+      <div class="form-group">
+        <label>Valor Pago (R$)</label>
+        <input type="number" id="link-valor" step="0.01">
+      </div>
+      <div class="form-group full">
+        <label>Observação (opcional)</label>
+        <input type="text" id="link-obs">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-link')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveLinkModal()">Vincular</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Hidden file inputs for project -->
+<input type="file" id="load-project-input" accept=".json" style="display:none" onchange="doLoadProject(event)">
+
+<!-- ════════════════════════ JAVASCRIPT ════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ESTADO GLOBAL DO PROJETO
+// ═══════════════════════════════════════════════════════════════
+let STATE = {
+  identificacao: {},
+  recursos: {
+    saldo_anterior: 0,
+    repasses: [{ data_prevista:'', valor_previsto:1500000, data_repasse:'2025-03-24', num_doc:'202503210041356', valor_repassado:1500000 }],
+    aplic_financeiras: 106700.83,
+    outras_receitas: 0,
+    recursos_proprios: 0,
+  },
+  notas: [],          // lista de NFs / despesas
+  extrato: [],        // lançamentos do extrato
+  matches: [],        // pares conciliados
+  aditivos: [],
+  nextNFId: 1,
+  nextExtId: 1,
+  nextMatchId: 1,
+  editingNFIdx: null,
+};
+
+// Categorias exatas do RP-12 (IN 01/2024 + modelos vigentes)
+const CATEGORIAS = [
+  { id:'rh_clt',    label:'Recursos Humanos (Salários, encargos e benefícios)',        nota:5 },
+  { id:'rh_pj',     label:'Recursos Humanos (Autônomos e pessoa jurídica)',             nota:6 },
+  { id:'medic',     label:'Medicamentos',                                               nota:null },
+  { id:'mat_hosp',  label:'Material médico e hospitalar (*)',                           nota:'saude' },
+  { id:'alim',      label:'Gêneros alimentícios',                                      nota:null },
+  { id:'mat_cons',  label:'Outros materiais de consumo',                               nota:null },
+  { id:'serv_med',  label:'Serviços médicos (*)',                                       nota:'saude' },
+  { id:'serv_terc', label:'Outros serviços de terceiros',                              nota:null },
+  { id:'loc_imovel',label:'Locação de imóveis',                                        nota:null },
+  { id:'loc_div',   label:'Locações diversas',                                         nota:null },
+  { id:'util_pub',  label:'Utilidades públicas (Energia, água/esgoto, gás, tel, internet)', nota:7 },
+  { id:'combust',   label:'Combustível',                                               nota:null },
+  { id:'bens_perm', label:'Bens e materiais permanentes',                              nota:null },
+  { id:'obras',     label:'Obras',                                                     nota:null },
+  { id:'desp_fin',  label:'Despesas financeiras e bancárias (**)',                     nota:'fin' },
+  { id:'outras',    label:'Outras despesas',                                           nota:null },
+];
+
+// ── mapeamento automático por palavra-chave (para XML/PDF/CSV) ──
+const KEYWORD_CAT = [
+  { cat:'medic',     keys:['medicamento','medic','farmac','drug','remedio','comprimido','injetavel','solução','antibiotico'] },
+  { cat:'mat_hosp',  keys:['material hospitalar','mat.hosp','cirurgic','equip med','hospitalar','cateter','seringa','luva','mask','gaze'] },
+  { cat:'alim',      keys:['aliment','genero','mercearia','panificadora','hortifruti','açougue','padaria'] },
+  { cat:'serv_med',  keys:['serviço médico','servico medico','medico','clinica','laboratorio','radiologi','fisioterapi','plantão','honorario'] },
+  { cat:'serv_terc', keys:['serviço','servico','prestação','contrato','assessoria','consultoria','terceiro'] },
+  { cat:'rh_clt',    keys:['salario','encargo','fgts','inss','folha','rescisão','ferias','13','beneficio','vale'] },
+  { cat:'rh_pj',     keys:['autonomo','pro-labore','rpa','pj ','pessoa jurídica'] },
+  { cat:'util_pub',  keys:['sabesp','cemig','cpfl','eletropaulo','gas','telefone','internet','agua','energia','esgoto','comgas'] },
+  { cat:'combust',   keys:['combustivel','gasolina','diesel','alcool','etanol','posto','abastecimento'] },
+  { cat:'loc_imovel',keys:['aluguel','locação imovel','locacao imovel','arrendamento'] },
+  { cat:'loc_div',   keys:['locação','locacao','aluguel equip'] },
+  { cat:'bens_perm', keys:['bem permanente','equipamento','mobiliario','computador','impressora','veiculo','instalacao'] },
+  { cat:'obras',     keys:['obra','reforma','construção','pintura','elétrica','hidráulica','civil'] },
+  { cat:'desp_fin',  keys:['tarifa','iof','juro','multa bancaria','ted','doc','taxa bancaria','financeira'] },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// NAVEGAÇÃO POR PASSOS
+// ═══════════════════════════════════════════════════════════════
+let currentStep = 0;
+
+function goStep(n) {
+  saveCurrentStepState();
+  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i===n));
+  document.querySelectorAll('.step-btn').forEach((b,i) => {
+    b.classList.remove('active','done');
+    if(i===n) b.classList.add('active');
+    else if(i<n) b.classList.add('done');
+  });
+  currentStep = n;
+  if(n===1) renderRepasses();
+  if(n===2) renderNFTable();
+  if(n===3) renderExtratoTable();
+  if(n===4) renderConcilPanel();
+  if(n===5) { renderCatPreview(); renderCatTable(); }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function saveCurrentStepState() {
+  // Captura campos do passo 0
+  if(currentStep===0) {
+    STATE.identificacao = {
+      tipo_instrumento:    v('tipo_instrumento'),
+      num_instrumento:     v('num_instrumento'),
+      data_assinatura:     v('data_assinatura'),
+      data_vigencia:       v('data_vigencia'),
+      exercicio:           v('exercicio'),
+      origem_recursos:     v('origem_recursos'),
+      orgao_concessor:     v('orgao_concessor'),
+      objeto:              v('objeto'),
+      beneficiario:        v('beneficiario'),
+      cnpj:                v('cnpj'),
+      endereco:            v('endereco'),
+      responsavel:         v('responsavel'),
+      cargo_responsavel:   v('cargo_responsavel'),
+      local_data_assinatura: v('local_data_assinatura'),
+      email:               v('email'),
+      telefone:            v('telefone'),
+    };
+  }
+  if(currentStep===1) {
+    STATE.recursos.saldo_anterior    = parseFloat(v('saldo_anterior')||0);
+    STATE.recursos.aplic_financeiras = parseFloat(v('aplic_financeiras')||0);
+    STATE.recursos.outras_receitas   = parseFloat(v('outras_receitas')||0);
+    STATE.recursos.recursos_proprios = parseFloat(v('recursos_proprios')||0);
+  }
+  if(currentStep===5) {
+    STATE.notas_rodape = {
+      fin:    v('nota_fin'),
+      desc:   v('nota_desc'),
+      outras: v('nota_outras'),
+    };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITÁRIOS
+// ═══════════════════════════════════════════════════════════════
+const v = id => document.getElementById(id)?.value ?? '';
+const el = id => document.getElementById(id);
+const fmt = n => 'R$ ' + (parseFloat(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = d => d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR') : '';
+const parseVal = s => parseFloat((s||'').toString().replace(/[^\d,.-]/g,'').replace(',','.')) || 0;
+
+function toast(msg, type='ok') {
+  const t = document.createElement('div');
+  t.className = 'toast' + (type==='warn'?' warn':type==='err'?' err':'');
+  t.textContent = msg;
+  el('toast-container').appendChild(t);
+  setTimeout(()=>t.remove(), 4500);
+}
+
+function auditLog(msg, type='info') {
+  const box = el('audit-log');
+  const line = document.createElement('div');
+  line.className = 'log-' + type;
+  line.textContent = `[${new Date().toLocaleTimeString('pt-BR')}] ${msg}`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+function formatCNPJ(input) {
+  let v = input.value.replace(/\D/g,'');
+  if(v.length<=14) {
+    v = v.replace(/^(\d{2})(\d)/,'$1.$2')
+         .replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3')
+         .replace(/\.(\d{3})(\d)/,'.$1/$2')
+         .replace(/(\d{4})(\d)/,'$1-$2');
+  }
+  input.value = v;
+}
+
+function generateId(prefix) {
+  return prefix + '_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PASSO 0 – ADITIVOS
+// ═══════════════════════════════════════════════════════════════
+function addAditivo() {
+  STATE.aditivos.push({ num:'', data:'', vigencia:'', valor:'' });
+  renderAditivos();
+}
+function renderAditivos() {
+  const div = el('aditivos-list');
+  div.innerHTML = '';
+  STATE.aditivos.forEach((a,i)=>{
+    const row = document.createElement('div');
+    row.className = 'repasse-row';
+    row.innerHTML = `
+      <div class="form-group"><label>Nº Aditivo</label>
+        <input type="text" value="${a.num}" oninput="STATE.aditivos[${i}].num=this.value" placeholder="1º Aditivo"></div>
+      <div class="form-group"><label>Data</label>
+        <input type="date" value="${a.data}" oninput="STATE.aditivos[${i}].data=this.value"></div>
+      <div class="form-group"><label>Nova Vigência</label>
+        <input type="date" value="${a.vigencia}" oninput="STATE.aditivos[${i}].vigencia=this.value"></div>
+      <div class="form-group"><label>Valor Acrescido (R$)</label>
+        <input type="number" value="${a.valor}" step="0.01" oninput="STATE.aditivos[${i}].valor=this.value"></div>
+      <button class="btn btn-danger btn-sm" style="margin-top:1.4rem" onclick="removeAditivo(${i})">✕</button>`;
+    div.appendChild(row);
+  });
+}
+function removeAditivo(i) { STATE.aditivos.splice(i,1); renderAditivos(); }
+
+// ═══════════════════════════════════════════════════════════════
+// PASSO 1 – REPASSES E CÁLCULO
+// ═══════════════════════════════════════════════════════════════
+function addRepasse() {
+  STATE.recursos.repasses.push({ data_prevista:'', valor_previsto:0, data_repasse:'', num_doc:'', valor_repassado:0 });
+  renderRepasses();
+}
+function renderRepasses() {
+  const div = el('repasses-list');
+  div.innerHTML = '';
+  STATE.recursos.repasses.forEach((r,i)=>{
+    const row = document.createElement('div');
+    row.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:.4rem;align-items:center;margin-bottom:.5rem;';
+    row.innerHTML = `
+      <div class="form-group"><label>Data Prev. Repasse</label>
+        <input type="date" value="${r.data_prevista}" oninput="STATE.recursos.repasses[${i}].data_prevista=this.value;calcRecursos()"></div>
+      <div class="form-group"><label>Valor Prev. (R$)</label>
+        <input type="number" value="${r.valor_previsto}" step="0.01" oninput="STATE.recursos.repasses[${i}].valor_previsto=parseFloat(this.value)||0;calcRecursos()"></div>
+      <div class="form-group"><label>Data Repasse Efetivo</label>
+        <input type="date" value="${r.data_repasse}" oninput="STATE.recursos.repasses[${i}].data_repasse=this.value"></div>
+      <div class="form-group"><label>Nº Doc. de Crédito</label>
+        <input type="text" value="${r.num_doc}" oninput="STATE.recursos.repasses[${i}].num_doc=this.value" placeholder="Ex: 202503210041356"></div>
+      <div class="form-group"><label>Valor Repassado (R$)</label>
+        <input type="number" value="${r.valor_repassado}" step="0.01" oninput="STATE.recursos.repasses[${i}].valor_repassado=parseFloat(this.value)||0;calcRecursos()"></div>
+      <button class="btn btn-danger btn-sm" style="margin-top:1.4rem" onclick="removeRepasse(${i})">✕</button>`;
+    div.appendChild(row);
+  });
+  calcRecursos();
+}
+function removeRepasse(i) { STATE.recursos.repasses.splice(i,1); renderRepasses(); }
+
+function calcRecursos() {
+  const A = parseFloat(v('saldo_anterior')||0);
+  const B = STATE.recursos.repasses.reduce((s,r)=>s+(parseFloat(r.valor_repassado)||0),0);
+  const C = parseFloat(v('aplic_financeiras')||0);
+  const D = parseFloat(v('outras_receitas')||0);
+  const F = parseFloat(v('recursos_proprios')||0);
+  const E = A+B+C+D;
+  const G = E+F;
+  el('total_repasses_display').textContent = fmt(B);
+  el('total_publico_display').textContent  = fmt(E);
+  el('total_disponivel_display').textContent = fmt(G);
+  STATE.recursos.total_B = B;
+  STATE.recursos.total_E = E;
+  STATE.recursos.total_G = G;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// IMPORTAÇÃO XML DE NF-e
+// ═══════════════════════════════════════════════════════════════
+async function handleNFXML(event) {
+  const files = Array.from(event.target.files);
+  const bar = el('nf-progress-bar'); bar.style.display='block';
+  const fill = el('nf-progress-fill');
+  for(let i=0;i<files.length;i++){
+    fill.style.width = ((i+1)/files.length*100)+'%';
+    const text = await files[i].text();
+    parseNFXML(text, files[i].name);
+    addFilePill('xml-files', files[i].name, 'ok');
+    auditLog(`XML importado: ${files[i].name}`, 'ok');
+  }
+  bar.style.display='none';
+  renderNFTable();
+  toast(`${files.length} XML(s) importado(s) com sucesso!`);
+  event.target.value = '';
+}
+
+function parseNFXML(xml, fname) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'text/xml');
+    const ns = 'http://www.portalfiscal.inf.br/nfe';
+
+    // Tenta com namespace, depois sem
+    const get = (tag) => {
+      let el = doc.querySelector(tag) || doc.getElementsByTagNameNS(ns, tag)[0] || doc.getElementsByTagName(tag)[0];
+      return el ? el.textContent.trim() : '';
+    };
+
+    const cNF      = get('cNF') || get('nNF');
+    const nNF      = get('nNF');
+    const dhEmi    = get('dhEmi') || get('dEmi');
+    const vNF      = get('vNF');
+    const xNome    = get('xNome');   // emitente
+    const CNPJ_em  = get('emit > CNPJ') || get('CNPJ');
+    const xFant    = get('xFant');
+    const descProd = Array.from(doc.getElementsByTagName('xProd')).map(e=>e.textContent).join('; ');
+
+    const dataStr = dhEmi ? dhEmi.substring(0,10) : '';
+    const catAuto = autoCategorize(xNome+' '+descProd);
+
+    STATE.notas.push({
+      id:          generateId('nf'),
+      num:         nNF || fname.replace('.xml',''),
+      data:        dataStr,
+      fornecedor:  xNome || xFant || '',
+      cnpj:        CNPJ_em,
+      valor:       parseFloat(vNF)||0,
+      categoria:   catAuto,
+      descricao:   descProd.substring(0,100),
+      colH:        0,
+      colI:        parseFloat(vNF)||0,
+      aPagar:      0,
+      fonte:       'XML',
+      conciliado:  false,
+    });
+  } catch(e) {
+    auditLog(`Erro ao parsear XML ${fname}: ${e.message}`, 'err');
+    toast(`Erro no XML: ${fname}`, 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// IMPORTAÇÃO DANFE PDF
+// ═══════════════════════════════════════════════════════════════
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+async function handleDANFE(event) {
+  const files = Array.from(event.target.files);
+  const bar = el('nf-progress-bar'); bar.style.display='block';
+  const fill = el('nf-progress-fill');
+  for(let i=0;i<files.length;i++){
+    fill.style.width=((i+1)/files.length*100)+'%';
+    try {
+      const buf = await files[i].arrayBuffer();
+      const text = await extractPDFText(buf);
+      const nf = parseDANFEText(text, files[i].name);
+      if(nf) {
+        STATE.notas.push(nf);
+        addFilePill('danfe-files', files[i].name, 'ok');
+        auditLog(`DANFE importado: ${files[i].name}`, 'ok');
+      } else {
+        addFilePill('danfe-files', files[i].name, 'err');
+        auditLog(`DANFE sem dados válidos: ${files[i].name}`, 'warn');
+      }
+    } catch(e) {
+      addFilePill('danfe-files', files[i].name, 'err');
+      auditLog(`Erro DANFE ${files[i].name}: ${e.message}`, 'err');
+    }
+  }
+  bar.style.display='none';
+  renderNFTable();
+  toast(`DANFEs processados!`);
+  event.target.value = '';
+}
+
+async function extractPDFText(buffer) {
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  let text = '';
+  for(let p=1; p<=pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    text += content.items.map(i=>i.str).join(' ') + '\n';
+  }
+  return text;
+}
+
+function parseDANFEText(text, fname) {
+  // Padrões robustos para DANFE nacional
+  const numMatch  = text.match(/N[úu]mero[:\s]+(\d+)/i) || text.match(/NF-?e[:\s#]+(\d+)/i) || text.match(/NÚMERO\s*(\d+)/i);
+  const dataMatch = text.match(/DATA.*?EMISS[ÃA]O[:\s]*([\d\/\-]+)/i) || text.match(/(\d{2}\/\d{2}\/\d{4})/);
+  const valMatch  = text.match(/VALOR TOTAL[:\s]*R?\$?\s*([\d.,]+)/i) || text.match(/TOTAL\s+NF[:\s]*R?\$?\s*([\d.,]+)/i) || text.match(/R\$\s*([\d.]+,\d{2})/);
+  const cnpjMatch = text.match(/CNPJ[:\s]*([\d.\/\-]+)/i);
+  const nomeMatch = text.match(/RAZÃO SOCIAL[:\s]*([^\n]+)/i) || text.match(/EMITENTE[:\s]*([^\n]+)/i);
+
+  const num   = numMatch  ? numMatch[1].trim()  : fname.replace('.pdf','');
+  const data  = dataMatch ? normalizeDate(dataMatch[1]) : '';
+  const valor = valMatch  ? parseVal(valMatch[1]) : 0;
+  const cnpj  = cnpjMatch ? cnpjMatch[1].trim()  : '';
+  const nome  = nomeMatch ? nomeMatch[1].trim().substring(0,60) : '';
+
+  return {
+    id:         generateId('nf'),
+    num,
+    data,
+    fornecedor: nome,
+    cnpj,
+    valor,
+    categoria:  autoCategorize(nome+' '+text.substring(0,300)),
+    descricao:  '',
+    colH:       0,
+    colI:       valor,
+    aPagar:     0,
+    fonte:      'DANFE-PDF',
+    conciliado: false,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// IMPORTAÇÃO EXTRATO PDF
+// ═══════════════════════════════════════════════════════════════
+async function handleExtratoPDF(event) {
+  const files = Array.from(event.target.files);
+  const bar = el('ext-progress-bar'); bar.style.display='block';
+  const fill = el('ext-progress-fill');
+  for(let i=0;i<files.length;i++){
+    fill.style.width=((i+1)/files.length*100)+'%';
+    try {
+      const buf = await files[i].arrayBuffer();
+      const text = await extractPDFText(buf);
+      const lcs = parseExtratoPDF(text);
+      STATE.extrato.push(...lcs);
+      addFilePill('extrato-pdf-files', files[i].name, 'ok');
+      auditLog(`Extrato PDF: ${lcs.length} lançamentos importados de ${files[i].name}`, 'ok');
+    } catch(e) {
+      addFilePill('extrato-pdf-files', files[i].name, 'err');
+      auditLog(`Erro extrato PDF ${files[i].name}: ${e.message}`, 'err');
+    }
+  }
+  bar.style.display='none';
+  renderExtratoTable();
+  toast(`Extrato(s) PDF processado(s)!`);
+  event.target.value = '';
+}
+
+function parseExtratoPDF(text) {
+  const lcs = [];
+  // Regex robusta para extratos bancários brasileiros (múltiplos bancos)
+  // Padrão: DD/MM/YYYY HISTÓRICO [NUM_DOC] DÉBITO CRÉDITO SALDO
+  const linhas = text.split('\n');
+  const dateRe  = /(\d{2}\/\d{2}\/\d{4}|\d{2}\/\d{2}\/\d{2})/;
+  const moneyRe = /([\d.]+,\d{2})/g;
+
+  for(const linha of linhas) {
+    const dateM = linha.match(dateRe);
+    if(!dateM) continue;
+    const valores = [...linha.matchAll(moneyRe)].map(m=>parseVal(m[1]));
+    if(valores.length===0) continue;
+
+    const data = normalizeDate(dateM[1]);
+    const hist = linha.replace(dateM[0],'').replace(moneyRe,'').trim().substring(0,80);
+
+    // Heurística: se a linha contém "D" ou valor negativo → débito
+    const isDebito = /\bD\b/.test(linha) || linha.includes('-');
+    const deb  = valores[0] || 0;
+    const cred = valores[1] || 0;
+    const saldo= valores[2] || 0;
+
+    lcs.push({
+      id:          generateId('ext'),
+      data,
+      historico:   hist,
+      num_doc:     extractDocNum(linha),
+      debito:      isDebito ? deb : (cred===0 ? deb : 0),
+      credito:     isDebito ? 0  : cred,
+      saldo,
+      conciliado:  false,
+    });
+  }
+  return lcs;
+}
+
+async function handleExtratoCSV(event) {
+  const files = Array.from(event.target.files);
+  for(const file of files) {
+    try {
+      const buf = await file.arrayBuffer();
+      const wb  = XLSX.read(buf, { type:'array', cellDates:true });
+      const ws  = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { header:1, raw:false });
+      const lcs = parseExtratoTableData(data);
+      STATE.extrato.push(...lcs);
+      addFilePill('extrato-csv-files', file.name, 'ok');
+      auditLog(`Extrato CSV/Excel: ${lcs.length} lançamentos de ${file.name}`, 'ok');
+    } catch(e) {
+      addFilePill('extrato-csv-files', file.name, 'err');
+      auditLog(`Erro CSV ${file.name}: ${e.message}`, 'err');
+    }
+  }
+  renderExtratoTable();
+  toast('Extrato CSV/Excel importado!');
+  event.target.value = '';
+}
+
+function parseExtratoTableData(rows) {
+  // Detecta colunas automaticamente
+  const lcs = [];
+  let dataCol=-1, histCol=-1, debCol=-1, credCol=-1, saldoCol=-1, docCol=-1;
+  const hdrs = rows.find(r=>r.some(c=>/data/i.test(c)));
+  if(hdrs) {
+    hdrs.forEach((h,i)=>{
+      if(/data/i.test(h))   dataCol=i;
+      if(/histor|descri|lançamento/i.test(h)) histCol=i;
+      if(/d[eé]b/i.test(h)) debCol=i;
+      if(/cr[eé]d/i.test(h)) credCol=i;
+      if(/saldo/i.test(h))  saldoCol=i;
+      if(/doc|cheque|num/i.test(h)) docCol=i;
+    });
+  }
+  const startRow = hdrs ? rows.indexOf(hdrs)+1 : 0;
+  for(let i=startRow;i<rows.length;i++){
+    const r=rows[i];
+    if(!r || r.every(c=>!c)) continue;
+    const data = dataCol>=0 ? normalizeDate(String(r[dataCol]||'')) : '';
+    if(!data) continue;
+    lcs.push({
+      id:        generateId('ext'),
+      data,
+      historico: histCol>=0 ? String(r[histCol]||'').substring(0,80) : '',
+      num_doc:   docCol>=0  ? String(r[docCol]||'') : '',
+      debito:    debCol>=0  ? parseVal(String(r[debCol]||0)) : 0,
+      credito:   credCol>=0 ? parseVal(String(r[credCol]||0)) : 0,
+      saldo:     saldoCol>=0? parseVal(String(r[saldoCol]||0)) : 0,
+      conciliado: false,
+    });
+  }
+  return lcs;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// IMPORTAÇÃO CSV/EXCEL DE NFs
+// ═══════════════════════════════════════════════════════════════
+function importCSV() { el('csv-input').click(); }
+
+async function handleCSVImport(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  try {
+    const buf = await file.arrayBuffer();
+    const wb  = XLSX.read(buf, { type:'array', cellDates:true });
+    const ws  = wb.Sheets[wb.SheetNames[0]];
+    const rows= XLSX.utils.sheet_to_json(ws, { header:1, raw:false });
+
+    // Detectar cabeçalho
+    let hdr = rows.findIndex(r=>r.some(c=>/data|nf|nota|item/i.test(c)));
+    if(hdr<0) hdr=0;
+    const hdrs = rows[hdr];
+    let iData=-1,iNum=-1,iForn=-1,iCNPJ=-1,iVal=-1,iCat=-1,iDesc=-1;
+    hdrs.forEach((h,i)=>{
+      const hl=(h||'').toLowerCase();
+      if(/data/.test(hl))            iData=i;
+      if(/^(nf|n[uú]m|n\.|doc|item)/.test(hl)) iNum=i;
+      if(/forne|credor|nome|raz/.test(hl)) iForn=i;
+      if(/cnpj|cpf/.test(hl))        iCNPJ=i;
+      if(/valor|vl|r\$/.test(hl))    iVal=i;
+      if(/categ|finalid|natureza/.test(hl)) iCat=i;
+      if(/descri|espec|objeto/.test(hl))    iDesc=i;
+    });
+
+    let count=0;
+    for(let i=hdr+1;i<rows.length;i++){
+      const r=rows[i];
+      if(!r||r.every(c=>!c)) continue;
+      const val=parseVal(String(r[iVal>=0?iVal:5]||0));
+      if(val===0) continue;
+      const fornStr = String(r[iForn>=0?iForn:3]||'');
+      const catId   = iCat>=0 ? mapCatLabel(String(r[iCat]||'')) : autoCategorize(fornStr);
+      STATE.notas.push({
+        id:         generateId('nf'),
+        num:        String(r[iNum>=0?iNum:2]||i),
+        data:       normalizeDate(String(r[iData>=0?iData:1]||'')),
+        fornecedor: fornStr.substring(0,60),
+        cnpj:       String(r[iCNPJ>=0?iCNPJ:4]||''),
+        valor:      val,
+        categoria:  catId,
+        descricao:  iDesc>=0?String(r[iDesc]||'').substring(0,80):'',
+        colH:       0, colI:val, aPagar:0,
+        fonte:      'CSV',
+        conciliado: false,
+      });
+      count++;
+    }
+    renderNFTable();
+    toast(`${count} despesas importadas do CSV/Excel!`);
+    auditLog(`CSV/Excel: ${count} NFs importadas de ${file.name}`, 'ok');
+  } catch(e) {
+    toast('Erro ao importar CSV: '+e.message, 'err');
+    auditLog('Erro CSV: '+e.message, 'err');
+  }
+  event.target.value='';
+}
+
+function downloadTemplateCSV() {
+  const rows=[
+    ['Item','Data Emissão','Nº Documento','Fornecedor/Credor','CNPJ/CPF','Valor (R$)','Categoria','Descrição'],
+    ['1','30/06/2025','259','YASMIN SAUDE SERVIÇOS MEDICOS','00.000.000/0001-00','28064.79','Serviços médicos (*)','Plantão médico junho/2025'],
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Despesas');
+  XLSX.writeFile(wb,'template_despesas_rp12.xlsx');
+  toast('Template baixado!');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABELA DE NFs
+// ═══════════════════════════════════════════════════════════════
+function renderNFTable() {
+  const tbody = el('nf-tbody');
+  tbody.innerHTML='';
+  el('nf-empty').style.display = STATE.notas.length ? 'none' : 'block';
+  STATE.notas.forEach((nf,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="mono">${i+1}</td>
+      <td class="mono">${fmtDate(nf.data)}</td>
+      <td class="mono">${nf.num}</td>
+      <td>${nf.fornecedor}</td>
+      <td class="mono" style="font-size:.72rem">${nf.cnpj}</td>
+      <td class="val">${fmt(nf.valor)}</td>
+      <td><span class="badge badge-blue" style="font-size:.65rem">${getCatLabel(nf.categoria)}</span></td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem">${nf.descricao}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="editNF(${i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="removeNF(${i})">✕</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function addNFManual() {
+  STATE.editingNFIdx = null;
+  // Limpar modal
+  ['m-data','m-num','m-fornecedor','m-cnpj','m-valor','m-desc'].forEach(id=>{
+    if(el(id)) el(id).value='';
+  });
+  el('m-colH').value=0; el('m-colI').value=0; el('m-aPagar').value=0;
+  populateCatSelect('m-categoria');
+  el('modal-nf').classList.add('open');
+}
+
+function editNF(i) {
+  STATE.editingNFIdx = i;
+  const nf = STATE.notas[i];
+  el('m-data').value       = nf.data||'';
+  el('m-num').value        = nf.num||'';
+  el('m-fornecedor').value = nf.fornecedor||'';
+  el('m-cnpj').value       = nf.cnpj||'';
+  el('m-valor').value      = nf.valor||0;
+  el('m-colH').value       = nf.colH||0;
+  el('m-colI').value       = nf.colI||nf.valor||0;
+  el('m-aPagar').value     = nf.aPagar||0;
+  el('m-desc').value       = nf.descricao||'';
+  populateCatSelect('m-categoria', nf.categoria);
+  el('modal-nf').classList.add('open');
+}
+
+function saveNFModal() {
+  const val = parseFloat(el('m-valor').value)||0;
+  const nf = {
+    id:         STATE.editingNFIdx!==null ? STATE.notas[STATE.editingNFIdx].id : generateId('nf'),
+    num:        el('m-num').value,
+    data:       el('m-data').value,
+    fornecedor: el('m-fornecedor').value,
+    cnpj:       el('m-cnpj').value,
+    valor:      val,
+    categoria:  el('m-categoria').value,
+    descricao:  el('m-desc').value,
+    colH:       parseFloat(el('m-colH').value)||0,
+    colI:       parseFloat(el('m-colI').value)||val,
+    aPagar:     parseFloat(el('m-aPagar').value)||0,
+    fonte:      STATE.editingNFIdx!==null ? STATE.notas[STATE.editingNFIdx].fonte : 'Manual',
+    conciliado: STATE.editingNFIdx!==null ? STATE.notas[STATE.editingNFIdx].conciliado : false,
+  };
+  if(STATE.editingNFIdx!==null) STATE.notas[STATE.editingNFIdx]=nf;
+  else STATE.notas.push(nf);
+  closeModal('modal-nf');
+  renderNFTable();
+  toast('Despesa salva!');
+}
+
+function removeNF(i) {
+  if(!confirm('Remover esta despesa?')) return;
+  STATE.notas.splice(i,1);
+  // Remove matches vinculados
+  STATE.matches = STATE.matches.filter(m=>m.nfIdx!==i);
+  STATE.matches.forEach(m=>{ if(m.nfIdx>i) m.nfIdx--; });
+  renderNFTable();
+}
+
+function populateCatSelect(selectId, selected='') {
+  const s = el(selectId);
+  s.innerHTML = CATEGORIAS.map(c=>`<option value="${c.id}" ${c.id===selected?'selected':''}>${c.label}</option>`).join('');
+}
+
+function getCatLabel(id) {
+  return (CATEGORIAS.find(c=>c.id===id)||{label:id||'Não classificada'}).label;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABELA EXTRATO
+// ═══════════════════════════════════════════════════════════════
+function renderExtratoTable() {
+  const tbody=el('extrato-tbody');
+  tbody.innerHTML='';
+  el('extrato-empty').style.display=STATE.extrato.length?'none':'block';
+  STATE.extrato.forEach((lc,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="mono">${i+1}</td>
+      <td class="mono">${fmtDate(lc.data)}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lc.historico}</td>
+      <td class="mono">${lc.num_doc}</td>
+      <td class="val">${lc.debito?fmt(lc.debito):'-'}</td>
+      <td style="color:var(--green);font-family:var(--mono)">${lc.credito?fmt(lc.credito):'-'}</td>
+      <td class="mono">${lc.saldo?fmt(lc.saldo):''}</td>
+      <td><span class="badge ${lc.conciliado?'badge-green':'badge-yellow'}">${lc.conciliado?'✓ Sim':'Não'}</span></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="editExtrato(${i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="removeExtrato(${i})">✕</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function addExtratoManual() {
+  STATE.extrato.push({
+    id:generateId('ext'), data:'', historico:'', num_doc:'',
+    debito:0, credito:0, saldo:0, conciliado:false
+  });
+  renderExtratoTable();
+}
+
+function editExtrato(i) {
+  const lc=STATE.extrato[i];
+  const data=prompt('Data (AAAA-MM-DD):',lc.data);
+  if(data===null)return;
+  const hist=prompt('Histórico:',lc.historico);
+  const doc=prompt('Nº Doc:',lc.num_doc);
+  const deb=prompt('Débito (R$):',lc.debito);
+  const cred=prompt('Crédito (R$):',lc.credito);
+  STATE.extrato[i]={...lc, data:data||lc.data, historico:hist||lc.historico,
+    num_doc:doc||lc.num_doc, debito:parseVal(deb), credito:parseVal(cred)};
+  renderExtratoTable();
+}
+
+function removeExtrato(i) {
+  if(!confirm('Remover lançamento?')) return;
+  STATE.extrato.splice(i,1);
+  renderExtratoTable();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONCILIAÇÃO AUTOMÁTICA (algoritmo de matching multi-critério)
+// ═══════════════════════════════════════════════════════════════
+function runAutoMatch() {
+  STATE.matches = [];
+  const usedExt = new Set();
+  let matched=0, unmatched=0;
+
+  auditLog('=== INICIANDO CONCILIAÇÃO AUTOMÁTICA ===', 'info');
+
+  STATE.notas.forEach((nf, nfIdx) => {
+    nf.conciliado = false;
+    let bestScore = -1, bestExtIdx = -1;
+
+    STATE.extrato.forEach((lc, extIdx) => {
+      if(usedExt.has(extIdx)) return;
+      if(lc.debito <= 0) return; // apenas débitos
+
+      let score = 0;
+
+      // 1. VALOR (peso 40) – tolerância R$5
+      const diff = Math.abs(nf.valor - lc.debito);
+      if(diff === 0)      score += 40;
+      else if(diff<=0.01) score += 38;
+      else if(diff<=1)    score += 32;
+      else if(diff<=5)    score += 22;
+      else if(diff<=50)   score += 5; // possível parcial
+
+      // 2. DATA (peso 25) – emissão vs pagamento (até 90 dias)
+      if(nf.data && lc.data) {
+        const dNF  = new Date(nf.data);
+        const dExt = new Date(lc.data);
+        const dias = Math.abs((dExt-dNF)/(1000*60*60*24));
+        if(dias===0)      score += 25;
+        else if(dias<=7)  score += 20;
+        else if(dias<=30) score += 15;
+        else if(dias<=60) score += 8;
+        else if(dias<=90) score += 3;
+      }
+
+      // 3. NF NO HISTÓRICO (peso 20)
+      const hist = lc.historico.toLowerCase();
+      const numNF = nf.num.toString().toLowerCase().replace(/[^0-9a-z]/g,'');
+      if(numNF && (hist.includes(numNF) || hist.includes('nf'+numNF) || hist.includes('nf '+numNF)))
+        score += 20;
+
+      // 4. CNPJ NO HISTÓRICO (peso 10)
+      if(nf.cnpj) {
+        const cnpjClean = nf.cnpj.replace(/\D/g,'');
+        if(cnpjClean.length>=8 && hist.replace(/\D/g,'').includes(cnpjClean.substring(0,8)))
+          score += 10;
+      }
+
+      // 5. NOME DO FORNECEDOR (peso 10)
+      if(nf.fornecedor) {
+        const words = nf.fornecedor.toLowerCase().split(/\s+/).filter(w=>w.length>3);
+        const matches = words.filter(w=>hist.includes(w));
+        if(matches.length>0) score += Math.min(10, matches.length*3);
+      }
+
+      // 6. Penalidade por valor muito diferente
+      if(diff > nf.valor * 0.2) score -= 15;
+
+      if(score > bestScore && score >= 20) {
+        bestScore = score; bestExtIdx = extIdx;
+      }
+    });
+
+    if(bestExtIdx >= 0) {
+      const lc = STATE.extrato[bestExtIdx];
+      STATE.matches.push({
+        id:       generateId('match'),
+        nfIdx,
+        extIdx:   bestExtIdx,
+        score:    bestScore,
+        status:   bestScore>=55 ? 'auto-ok' : 'revisar',
+        dataPgto: lc.data,
+        valorPgto: lc.debito,
+        numDocBanco: lc.num_doc,
+      });
+      nf.conciliado = true;
+      STATE.extrato[bestExtIdx].conciliado = true;
+      usedExt.add(bestExtIdx);
+
+      const scoreLabel = bestScore>=55?'ALTO':bestScore>=35?'MÉDIO':'BAIXO';
+      auditLog(`MATCH [score=${bestScore}/${scoreLabel}]: NF ${nf.num} (${fmt(nf.valor)}) → ${lc.data} ${fmt(lc.debito)}`, bestScore>=55?'ok':'warn');
+      matched++;
+    } else {
+      auditLog(`SEM MATCH: NF ${nf.num} – ${nf.fornecedor} – ${fmt(nf.valor)}`, 'warn');
+      unmatched++;
+    }
+  });
+
+  auditLog(`=== CONCILIAÇÃO CONCLUÍDA: ${matched} vinculados, ${unmatched} sem match ===`, 'info');
+  renderConcilPanel();
+  toast(`Conciliação: ${matched} vinculadas, ${unmatched} sem par`, matched>0?'ok':'warn');
+}
+
+function renderConcilPanel() {
+  // Stats
+  const totalNF = STATE.notas.length;
+  const totalExt = STATE.extrato.filter(e=>e.debito>0).length;
+  const matched = STATE.matches.length;
+  const sumNF = STATE.notas.reduce((s,n)=>s+n.valor,0);
+  const sumMatch = STATE.matches.reduce((s,m)=>s+(STATE.notas[m.nfIdx]?.valor||0),0);
+
+  el('concil-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">NFs / Despesas</div><div class="stat-value">${totalNF}</div><div class="stat-sub">${fmt(sumNF)}</div></div>
+    <div class="stat-card"><div class="stat-label">Débitos no Extrato</div><div class="stat-value">${totalExt}</div></div>
+    <div class="stat-card"><div class="stat-label">Conciliados</div><div class="stat-value" style="color:var(--green)">${matched}</div><div class="stat-sub">${fmt(sumMatch)}</div></div>
+    <div class="stat-card"><div class="stat-label">Sem Par</div><div class="stat-value" style="color:var(--gold)">${totalNF-matched}</div></div>
+    <div class="stat-card"><div class="stat-label">Cobertura</div><div class="stat-value">${totalNF?Math.round(matched/totalNF*100):0}%</div></div>
+  `;
+
+  // Tabela de matches
+  const tbody=el('concil-tbody');
+  tbody.innerHTML='';
+  el('concil-empty').style.display=STATE.matches.length?'none':'block';
+
+  STATE.matches.forEach((m,i)=>{
+    const nf = STATE.notas[m.nfIdx];
+    const statusBadge = m.status==='auto-ok'
+      ? '<span class="badge badge-green">✓ Auto</span>'
+      : m.status==='manual'
+      ? '<span class="badge badge-blue">Manual</span>'
+      : '<span class="badge badge-yellow">⚠ Revisar</span>';
+    const scoreBadge = m.score>=55
+      ? `<span class="badge badge-green">${m.score}</span>`
+      : m.score>=35
+      ? `<span class="badge badge-yellow">${m.score}</span>`
+      : `<span class="badge badge-red">${m.score}</span>`;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="mono">${i+1}</td>
+      <td class="mono">${nf?.num||''}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nf?.fornecedor||''}</td>
+      <td class="mono">${fmtDate(nf?.data)}</td>
+      <td class="val">${fmt(nf?.valor)}</td>
+      <td class="mono">${fmtDate(m.dataPgto)}</td>
+      <td class="val">${fmt(m.valorPgto)}</td>
+      <td class="mono">${m.numDocBanco}</td>
+      <td>${scoreBadge}</td>
+      <td><select class="cat-select" style="min-width:160px" onchange="updateMatchCat(${i},this.value)">${CATEGORIAS.map(c=>`<option value="${c.id}" ${c.id===nf?.categoria?'selected':''}>${c.label}</option>`).join('')}</select></td>
+      <td>${statusBadge}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeMatch(${i})">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Não conciliados
+  const unmatched = STATE.notas.filter(n=>!n.conciliado);
+  const card = el('unmatched-card');
+  if(unmatched.length>0){
+    card.style.display='block';
+    el('unmatched-list').innerHTML = unmatched.map((n,i)=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .6rem;border:1px solid var(--border);border-radius:6px;margin-bottom:.3rem;font-size:.8rem;">
+        <span><strong>NF ${n.num}</strong> – ${n.fornecedor} – <span style="font-family:var(--mono);color:var(--teal)">${fmt(n.valor)}</span></span>
+        <button class="btn btn-secondary btn-sm" onclick="openLinkModal(${STATE.notas.indexOf(n)})">Vincular manualmente</button>
+      </div>`).join('');
+  } else {
+    card.style.display='none';
+  }
+}
+
+function updateMatchCat(matchIdx, catId) {
+  const nfIdx = STATE.matches[matchIdx].nfIdx;
+  if(nfIdx>=0) STATE.notas[nfIdx].categoria = catId;
+}
+
+function removeMatch(i) {
+  const m=STATE.matches[i];
+  if(m.nfIdx>=0) STATE.notas[m.nfIdx].conciliado=false;
+  if(m.extIdx>=0) STATE.extrato[m.extIdx].conciliado=false;
+  STATE.matches.splice(i,1);
+  renderConcilPanel();
+}
+
+function clearMatches() {
+  if(!confirm('Limpar toda a conciliação?')) return;
+  STATE.matches=[];
+  STATE.notas.forEach(n=>n.conciliado=false);
+  STATE.extrato.forEach(e=>e.conciliado=false);
+  renderConcilPanel();
+  toast('Conciliação limpa.','warn');
+}
+
+function openLinkModal(nfIdx) {
+  const s1=el('link-nf');
+  s1.innerHTML=STATE.notas.map((n,i)=>`<option value="${i}" ${i===nfIdx?'selected':''}>${n.num} – ${n.fornecedor} – ${fmt(n.valor)}</option>`).join('');
+  const s2=el('link-ext');
+  s2.innerHTML=STATE.extrato.filter(e=>e.debito>0).map((e,i)=>`<option value="${i}">${e.data} – ${e.historico} – ${fmt(e.debito)}</option>`).join('');
+  el('link-data').value='';
+  el('link-valor').value='';
+  el('modal-link').classList.add('open');
+}
+
+function saveLinkModal() {
+  const nfIdx  = parseInt(el('link-nf').value);
+  const extIdx = parseInt(el('link-ext').value);
+  const dataPgto = el('link-data').value || STATE.extrato[extIdx]?.data || '';
+  const valorPgto= parseFloat(el('link-valor').value) || STATE.extrato[extIdx]?.debito || 0;
+
+  // Remove match existente do mesmo nfIdx
+  STATE.matches = STATE.matches.filter(m=>m.nfIdx!==nfIdx);
+
+  STATE.matches.push({
+    id:generateId('match'), nfIdx, extIdx, score:100,
+    status:'manual', dataPgto, valorPgto,
+    numDocBanco: STATE.extrato[extIdx]?.num_doc||'',
+  });
+  STATE.notas[nfIdx].conciliado=true;
+  if(STATE.extrato[extIdx]) STATE.extrato[extIdx].conciliado=true;
+  closeModal('modal-link');
+  renderConcilPanel();
+  auditLog(`MANUAL: NF ${STATE.notas[nfIdx].num} vinculada ao extrato (idx ${extIdx})`, 'ok');
+  toast('Vínculo manual criado!');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PASSO 5 – CATEGORIA E RP-12
+// ═══════════════════════════════════════════════════════════════
+function renderCatTable() {
+  const tbody=el('cat-tbody');
+  tbody.innerHTML='';
+  const grouped={};
+  CATEGORIAS.forEach(c=>{ grouped[c.id]={H:0,I:0,J:0,K:0}; });
+
+  // Usa os valores das NFs
+  STATE.notas.forEach(nf=>{
+    const cat = nf.categoria || 'outras';
+    if(!grouped[cat]) grouped[cat]={H:0,I:0,J:0,K:0};
+    grouped[cat].H += nf.colH || 0;
+    grouped[cat].I += nf.colI || nf.valor || 0;
+    grouped[cat].J += (nf.colH||0)+(nf.colI||nf.valor||0);
+    grouped[cat].K += nf.aPagar || 0;
+  });
+
+  let totH=0,totI=0,totJ=0,totK=0;
+  CATEGORIAS.forEach(c=>{
+    const g=grouped[c.id]||{H:0,I:0,J:0,K:0};
+    totH+=g.H; totI+=g.I; totJ+=g.J; totK+=g.K;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${c.label}${c.nota?` <span style="color:var(--muted);font-size:.7rem">(${c.nota})</span>`:''}</td>
+      <td><input type="number" class="cat-input" value="${g.H.toFixed(2)}" step="0.01"
+        data-cat="${c.id}" data-col="H" oninput="updateCatVal(this)" style="width:100%;font-family:var(--mono);font-size:.8rem;text-align:right"></td>
+      <td><input type="number" class="cat-input" value="${g.I.toFixed(2)}" step="0.01"
+        data-cat="${c.id}" data-col="I" oninput="updateCatVal(this)" style="width:100%;font-family:var(--mono);font-size:.8rem;text-align:right"></td>
+      <td class="r mono" id="catJ_${c.id}">${fmt(g.J)}</td>
+      <td><input type="number" class="cat-input" value="${g.K.toFixed(2)}" step="0.01"
+        data-cat="${c.id}" data-col="K" oninput="updateCatVal(this)" style="width:100%;font-family:var(--mono);font-size:.8rem;text-align:right"></td>`;
+    tbody.appendChild(tr);
+  });
+  el('cat-tot-H').textContent=fmt(totH);
+  el('cat-tot-I').textContent=fmt(totI);
+  el('cat-tot-J').textContent=fmt(totJ);
+  el('cat-tot-K').textContent=fmt(totK);
+}
+
+function updateCatVal(input) {
+  const cat=input.dataset.cat, col=input.dataset.col;
+  // Atualiza resumo ao editar manualmente
+  recalcCatTotals();
+  // Se coluna H ou I, recalc J
+  if(col==='H'||col==='I'){
+    const row=input.closest('tr');
+    const H=parseFloat(row.querySelectorAll('.cat-input')[0].value)||0;
+    const I=parseFloat(row.querySelectorAll('.cat-input')[1].value)||0;
+    el('catJ_'+cat).textContent=fmt(H+I);
+  }
+}
+
+function recalcCatTotals() {
+  const inputs=document.querySelectorAll('.cat-input');
+  let H=0,I=0,J=0,K=0;
+  const rows={};
+  inputs.forEach(inp=>{
+    const cat=inp.dataset.cat, col=inp.dataset.col;
+    if(!rows[cat]) rows[cat]={H:0,I:0,K:0};
+    rows[cat][col]=parseFloat(inp.value)||0;
+  });
+  Object.values(rows).forEach(r=>{ H+=r.H; I+=r.I; J+=(r.H+r.I); K+=r.K; });
+  el('cat-tot-H').textContent=fmt(H);
+  el('cat-tot-I').textContent=fmt(I);
+  el('cat-tot-J').textContent=fmt(J);
+  el('cat-tot-K').textContent=fmt(K);
+}
+
+// Coleta valores atuais das categorias da tabela
+function collectCatValues() {
+  const result={};
+  CATEGORIAS.forEach(c=>result[c.id]={H:0,I:0,J:0,K:0});
+  document.querySelectorAll('.cat-input').forEach(inp=>{
+    const cat=inp.dataset.cat, col=inp.dataset.col;
+    if(result[cat]) result[cat][col]=parseFloat(inp.value)||0;
+  });
+  CATEGORIAS.forEach(c=>{ result[c.id].J=result[c.id].H+result[c.id].I; });
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GERAÇÃO DO RP-12 (HTML oficial)
+// ═══════════════════════════════════════════════════════════════
+function generateRP12() {
+  saveCurrentStepState();
+  const ID = STATE.identificacao;
+  const REC = STATE.recursos;
+  const cats = collectCatValues();
+  const notas = STATE.notas_rodape || {};
+
+  // Totais
+  const A = REC.saldo_anterior||0;
+  const B = REC.total_B || REC.repasses.reduce((s,r)=>s+(r.valor_repassado||0),0);
+  const C = REC.aplic_financeiras||0;
+  const D = REC.outras_receitas||0;
+  const F = REC.recursos_proprios||0;
+  const E = A+B+C+D;
+  const G = E+F;
+
+  let totH=0,totI=0,totJ=0,totK=0;
+  CATEGORIAS.forEach(c=>{ totH+=cats[c.id].H; totI+=cats[c.id].I; totJ+=cats[c.id].J; totK+=cats[c.id].K; });
+
+  const J_total = totJ;
+  const K_recurso = E - (J_total - F);
+  // Verificar devolução
+  const L_devolvido = 0; // a preencher manualmente
+  const M_proximo   = K_recurso - L_devolvido;
+
+  // Tipo do instrumento
+  const tipoInstr = (ID.tipo_instrumento||'CONVÊNIO').toUpperCase();
+
+  // Data assinatura longa
+  const hoje = new Date();
+  const dataAssinatura = ID.local_data_assinatura
+    ? `${ID.local_data_assinatura}, ${hoje.getDate()} de ${hoje.toLocaleString('pt-BR',{month:'long'})} de ${hoje.getFullYear()}.`
+    : '';
+
+  // Tabela de repasses
+  const repassesRows = REC.repasses.map(r=>`
+    <tr>
+      <td class="c">${fmtDate(r.data_prevista)||''}</td>
+      <td class="r">${fmt(r.valor_previsto)}</td>
+      <td class="c">${fmtDate(r.data_repasse)||''}</td>
+      <td class="c">${r.num_doc||''}</td>
+      <td class="r">${fmt(r.valor_repassado)}</td>
+    </tr>`).join('');
+
+  // Tabela aditivos
+  const aditivosRows = STATE.aditivos.length ? STATE.aditivos.map(a=>`
+    <tr>
+      <td>${a.num||'Aditamento'}</td>
+      <td class="c">${fmtDate(a.data)}</td>
+      <td class="c">${fmtDate(a.vigencia)}</td>
+      <td class="r">${a.valor?fmt(a.valor):''}</td>
+    </tr>`).join('') : '';
+
+  // Tabela de despesas por categoria
+  const catRows = CATEGORIAS.map(c=>{
+    const g=cats[c.id];
+    const hasData = g.H||g.I||g.J||g.K;
+    return `<tr ${!hasData?'style="color:#888"':''}>
+      <td>${c.label}${c.nota?` (${c.nota})`:''}</td>
+      <td class="r">${g.H?fmt(g.H):'0,00'}</td>
+      <td class="r">${g.I?fmt(g.I):'0,00'}</td>
+      <td class="r">${g.J?fmt(g.J):'0,00'}</td>
+      <td class="r">${g.K?fmt(g.K):'0,00'}</td>
+    </tr>`;
+  }).join('');
+
+  // Nota 9 automática
+  let nota9 = notas.desc||'';
+  const diffDesconto = totH+totI - totJ; // sempre zero por definição
+  if(Math.abs(diffDesconto)>0.01) nota9 = `Diferença de ${fmt(diffDesconto)} decorrente de desconto/multa conforme Nota (9).`;
+
+  const html = `
+<div style="margin-bottom:24pt;">
+  <div class="rp12-title">ANEXO RP 12 - REPASSES AO TERCEIRO SETOR DEMONSTRATIVO</div>
+  <div class="rp12-subtitle">INTEGRAL DAS RECEITAS E DESPESAS - ${tipoInstr}</div>
+</div>
+
+<div class="rp12-info"><strong>ÓRGÃO CONCESSOR:</strong> ${ID.orgao_concessor||''}</div>
+<div class="rp12-info"><strong>OBJETO:</strong> ${ID.objeto||''}</div>
+<div class="rp12-info"><strong>${tipoInstr} Nº:</strong> ${ID.num_instrumento||''}</div>
+<div class="rp12-info"><strong>EXERCÍCIO:</strong> ${ID.exercicio||''}</div>
+<div class="rp12-info"><strong>BENEFICIÁRIO:</strong> ${ID.beneficiario||''}</div>
+<div class="rp12-info"><strong>CNPJ:</strong> ${ID.cnpj||''}</div>
+<div class="rp12-info"><strong>ENDEREÇO e CEP:</strong> ${ID.endereco||''}</div>
+<div class="rp12-info"><strong>RESPONSÁVEL(IS) PELO BENEFICIÁRIO:</strong> ${ID.responsavel||''}</div>
+<div class="rp12-info"><strong>ORIGEM DOS RECURSOS (1):</strong> ${ID.origem_recursos||''}</div>
+
+<table class="rp12-table" style="margin-top:8pt;">
+  <thead>
+    <tr><th>DOCUMENTO</th><th>DATA</th><th>VIGÊNCIA</th><th>VALOR (R$)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>${tipoInstr} Nº ${ID.num_instrumento||''}</td>
+      <td class="c">${fmtDate(ID.data_assinatura)}</td>
+      <td class="c">${fmtDate(ID.data_vigencia)}</td>
+      <td class="r">${fmt(B)}</td></tr>
+    ${aditivosRows}
+  </tbody>
+</table>
+
+<div class="rp12-section-title">DEMONSTRATIVO DOS RECURSOS DISPONÍVEIS NO EXERCÍCIO</div>
+
+<table class="rp12-table">
+  <thead>
+    <tr>
+      <th>DATA PREVISTA PARA O REPASSE (2)</th>
+      <th>VALORES PREVISTOS (R$)</th>
+      <th>DATA DO REPASSE</th>
+      <th>NÚMERO DO DOCUMENTO DE CRÉDITO</th>
+      <th>VALORES REPASSADOS (R$)</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${repassesRows}
+    <tr class="total-row">
+      <td colspan="4">(A) SALDO DO EXERCÍCIO ANTERIOR</td>
+      <td class="r">${A?fmt(A):'–'}</td>
+    </tr>
+    <tr class="total-row">
+      <td colspan="4">(B) REPASSES PÚBLICOS NO EXERCÍCIO</td>
+      <td class="r">${fmt(B)}</td>
+    </tr>
+    <tr>
+      <td colspan="4">(C) RECEITAS COM APLICAÇÕES FINANCEIRAS DOS REPASSES PÚBLICOS</td>
+      <td class="r">${C?fmt(C):'–'}</td>
+    </tr>
+    <tr>
+      <td colspan="4">(D) OUTRAS RECEITAS DECORRENTES DA EXECUÇÃO DO AJUSTE (3)</td>
+      <td class="r">${D?fmt(D):'–'}</td>
+    </tr>
+    <tr class="total-row">
+      <td colspan="4">(E) TOTAL DE RECURSOS PÚBLICOS (A+B+C+D)</td>
+      <td class="r">${fmt(E)}</td>
+    </tr>
+    <tr>
+      <td colspan="4">(F) RECURSOS PRÓPRIOS DA ENTIDADE BENEFICIÁRIA</td>
+      <td class="r">${F?fmt(F):'–'}</td>
+    </tr>
+    <tr class="total-row" style="background:#d0e8d0">
+      <td colspan="4">(G) TOTAL DE RECURSOS DISPONÍVEIS NO EXERCÍCIO (E+F)</td>
+      <td class="r">${fmt(G)}</td>
+    </tr>
+  </tbody>
+</table>
+<div class="rp12-note">(1) Verba: Federal, Estadual ou Municipal, devendo ser elaborado um anexo para cada fonte de recurso.</div>
+<div class="rp12-note">(2) Incluir valores previstos no exercício anterior e repassados neste exercício.</div>
+<div class="rp12-note">(3) Receitas com estacionamento, aluguéis, entre outras.</div>
+
+<br>
+<p style="font-size:9pt;margin:8pt 0;">
+O signatário, na qualidade de representante da ${ID.beneficiario||''} vem indicar, na forma abaixo detalhada, as despesas incorridas e pagas no exercício de ${ID.exercicio||''} bem como as despesas a pagar no exercício seguinte.
+</p>
+
+<div class="rp12-section-title">DEMONSTRATIVO DAS DESPESAS INCORRIDAS NO EXERCÍCIO</div>
+<div class="rp12-info" style="margin-bottom:6pt;"><strong>ORIGEM DOS RECURSOS (4):</strong> ${ID.origem_recursos||''}</div>
+
+<table class="rp12-table">
+  <thead>
+    <tr>
+      <th rowspan="2" style="width:28%">CATEGORIA OU FINALIDADE DA DESPESA (8)</th>
+      <th colspan="4" style="text-align:center">DESPESAS CONTABILIZADAS NESTE EXERCÍCIO (R$)</th>
+    </tr>
+    <tr>
+      <th>DESPESAS CONTABILIZADAS EM EXERCÍCIOS ANTERIORES E PAGAS NESTE EXERCÍCIO (R$) (H)</th>
+      <th>DESPESAS CONTABILIZADAS NESTE EXERCÍCIO E PAGAS NESTE EXERCÍCIO (R$) (I)</th>
+      <th>TOTAL DE DESPESAS PAGAS NESTE EXERCÍCIO (R$) (J=H+I)</th>
+      <th>DESPESAS CONTABILIZADAS NESTE EXERCÍCIO A PAGAR EM EXERCÍCIOS SEGUINTES (R$)</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${catRows}
+    <tr class="total-row">
+      <td><strong>TOTAL</strong></td>
+      <td class="r"><strong>${fmt(totH)}</strong></td>
+      <td class="r"><strong>${fmt(totI)}</strong></td>
+      <td class="r"><strong>${fmt(totJ)}</strong></td>
+      <td class="r"><strong>${fmt(totK)}</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="rp12-note">(4) Verba: Federal, Estadual, Municipal e Recursos Próprios, devendo ser elaborado um Anexo para cada fonte de recurso.</div>
+<div class="rp12-note">(5) Salários, encargos e benefícios.</div>
+<div class="rp12-note">(6) Autônomos e pessoa jurídica.</div>
+<div class="rp12-note">(7) Energia elétrica, água e esgoto, gás, telefone e internet.</div>
+<div class="rp12-note">(8) No rol exemplificativo incluir também as aquisições e os compromissos assumidos que não são classificados contabilmente como DESPESAS, como, por exemplo, aquisição de bens permanentes.</div>
+${nota9 ? `<div class="rp12-note">(9) ${nota9}</div>` : ''}
+<div class="rp12-note">(*) Apenas para entidades da área da Saúde.</div>
+${notas.fin ? `<div class="rp12-note">(**) ${notas.fin}</div>` : ''}
+${notas.outras ? `<div class="rp12-note">${notas.outras}</div>` : ''}
+
+<div class="rp12-section-title">DEMONSTRATIVO DO SALDO FINANCEIRO NO EXERCÍCIO</div>
+
+<table class="rp12-saldo-table">
+  <tr><td class="lbl">(G) TOTAL DE RECURSOS DISPONÍVEL NO EXERCÍCIO</td><td class="val">${fmt(G)}</td></tr>
+  <tr><td class="lbl">(J) DESPESAS PAGAS NO EXERCÍCIO (H+I)</td><td class="val">${fmt(J_total)}</td></tr>
+  <tr><td class="lbl">(K) RECURSO PÚBLICO NÃO APLICADO [E-(J-F)]</td><td class="val">${fmt(K_recurso)}</td></tr>
+  <tr><td class="lbl">(L) VALOR DEVOLVIDO AO ÓRGÃO PÚBLICO</td><td class="val">${L_devolvido?fmt(L_devolvido):'–'}</td></tr>
+  <tr style="font-weight:bold;background:#e0f0e0"><td class="lbl">(M) VALOR AUTORIZADO PARA APLICAÇÃO NO EXERCÍCIO SEGUINTE (K-L)</td><td class="val">${fmt(M_proximo)}</td></tr>
+</table>
+
+<div class="rp12-sig">
+  <p style="font-size:8.5pt;margin-bottom:20pt">
+    Declaro, na qualidade de responsável pela entidade supra epigrafada, sob as penas da Lei, que a despesa relacionada comprova a exata aplicação dos recursos recebidos para os fins indicados, conforme programa de trabalho aprovado, proposto ao Órgão Público Convenente.
+  </p>
+  <p style="font-size:9pt;margin-bottom:30pt">${dataAssinatura}</p>
+  <div style="text-align:center; display:inline-block; min-width:280px;">
+    <div>__________________________________</div>
+    <div style="margin-top:4pt; font-weight:bold">${ID.responsavel||''}</div>
+    <div>${ID.cargo_responsavel||''}</div>
+  </div>
+</div>
+
+<hr style="margin-top:16pt; border-color:#000">
+<div style="font-size:7.5pt; margin-top:4pt">${ID.endereco||''} ${ID.telefone?'– TELEFONE: '+ID.telefone:''}</div>
+<div style="font-size:7.5pt">CNPJ: ${ID.cnpj||''} ${ID.email?'– E-MAIL: '+ID.email:''}</div>`;
+
+  el('rp12-preview').innerHTML = html;
+  toast('RP-12 gerado com sucesso!');
+  auditLog('RP-12 / DIRD gerado e atualizado', 'ok');
+
+  // Valida coerência
+  if(Math.abs(B-J_total-K_recurso)>0.05) {
+    auditLog(`ATENÇÃO: Saldo financeiro não fecha. Diferença: ${fmt(Math.abs(B-J_total-K_recurso))}`, 'warn');
+    toast('Atenção: Verifique o saldo financeiro!', 'warn');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORTAÇÕES
+// ═══════════════════════════════════════════════════════════════
+function exportPDF() {
+  generateRP12();
+  const elem = el('rp12-preview');
+  const opt = {
+    margin:       [10,15,10,15],
+    filename:     `RP12_DIRD_${STATE.identificacao.num_instrumento||'convenio'}_${STATE.identificacao.exercicio||''}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+  toast('Gerando PDF...', 'ok');
+  html2pdf().set(opt).from(elem).save().then(()=>toast('PDF salvo!'));
+}
+
+function exportExcel() {
+  saveCurrentStepState();
+  const cats = collectCatValues();
+  const ID = STATE.identificacao;
+  const REC = STATE.recursos;
+  const B = REC.total_B || REC.repasses.reduce((s,r)=>s+(r.valor_repassado||0),0);
+  const A=REC.saldo_anterior||0, C=REC.aplic_financeiras||0, D=REC.outras_receitas||0, F=REC.recursos_proprios||0;
+  const E=A+B+C+D, G=E+F;
+
+  const wb = XLSX.utils.book_new();
+
+  // Aba RP12
+  const rp12Data = [
+    [`ANEXO RP-12 – DEMONSTRATIVO INTEGRAL DAS RECEITAS E DESPESAS`],
+    [`Convênio/Instrumento: ${ID.num_instrumento||''}`, `Exercício: ${ID.exercicio||''}`],
+    [`Beneficiário: ${ID.beneficiario||''}`, `CNPJ: ${ID.cnpj||''}`],
+    [`Órgão Concessor: ${ID.orgao_concessor||''}`],
+    [],
+    ['RECURSOS DISPONÍVEIS', 'VALOR (R$)'],
+    ['(A) Saldo Exercício Anterior', A],
+    ['(B) Repasses Públicos no Exercício', B],
+    ['(C) Receitas com Aplicações Financeiras', C],
+    ['(D) Outras Receitas', D],
+    ['(E) Total Recursos Públicos (A+B+C+D)', E],
+    ['(F) Recursos Próprios', F],
+    ['(G) Total Disponível (E+F)', G],
+    [],
+    ['CATEGORIA / FINALIDADE', 'H – Desp.Ant.Pagas Neste', 'I – Desp.Neste Pagas Neste', 'J=H+I Total Pago', 'A Pagar Próx.Exercício'],
+    ...CATEGORIAS.map(c=>[c.label, cats[c.id].H, cats[c.id].I, cats[c.id].J, cats[c.id].K]),
+    ['TOTAL',
+      CATEGORIAS.reduce((s,c)=>s+cats[c.id].H,0),
+      CATEGORIAS.reduce((s,c)=>s+cats[c.id].I,0),
+      CATEGORIAS.reduce((s,c)=>s+cats[c.id].J,0),
+      CATEGORIAS.reduce((s,c)=>s+cats[c.id].K,0),
+    ],
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rp12Data), 'RP12');
+
+  // Aba SES (relação de despesas)
+  const sesData = [
+    ['RELAÇÃO DAS DESPESAS'],
+    ['ITEM','DATA DOCUMENTO','Nº DOCUMENTO','CREDOR','NATUREZA DA DESPESA','VALOR (R$)','Nº DOC. DÉBITO','DATA COMPENSAÇÃO'],
+    ...STATE.notas.map((n,i)=>{
+      const m = STATE.matches.find(x=>x.nfIdx===i);
+      return [i+1, n.data, n.num, n.fornecedor, getCatLabel(n.categoria), n.valor, m?.numDocBanco||'', m?.dataPgto||''];
+    }),
+    ['','','','TOTAL','',STATE.notas.reduce((s,n)=>s+n.valor,0),'',''],
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sesData), 'SES');
+
+  // Aba Conciliação
+  const concilData = [
+    ['CONCILIAÇÃO NF × EXTRATO BANCÁRIO'],
+    ['NF Nº','Fornecedor','Valor NF','Data NF','Data Pgto','Valor Pgto','Doc.Banco','Score','Status'],
+    ...STATE.matches.map(m=>{
+      const nf=STATE.notas[m.nfIdx];
+      return [nf?.num, nf?.fornecedor, nf?.valor, nf?.data, m.dataPgto, m.valorPgto, m.numDocBanco, m.score, m.status];
+    }),
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(concilData), 'Conciliação');
+
+  XLSX.writeFile(wb, `DIRD_RP12_${ID.num_instrumento||'convenio'}_${ID.exercicio||''}.xlsx`);
+  toast('Excel exportado!');
+}
+
+function exportAuditLog() {
+  const lines = Array.from(el('audit-log').children).map(l=>l.textContent);
+  const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `log_auditoria_${Date.now()}.txt`;
+  a.click();
+  toast('Log exportado!');
+}
+
+function exportJSON() {
+  saveCurrentStepState();
+  const json = JSON.stringify(STATE, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `projeto_rp12_${STATE.identificacao.num_instrumento||'backup'}_${Date.now()}.json`;
+  a.click();
+  toast('Projeto JSON exportado!');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SALVAR / CARREGAR PROJETO
+// ═══════════════════════════════════════════════════════════════
+function saveProject() {
+  saveCurrentStepState();
+  const json = JSON.stringify(STATE, null, 2);
+  // localStorage
+  try { localStorage.setItem('rp12_projeto', json); } catch(e){}
+  // Download
+  const blob = new Blob([json],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `rp12_${STATE.identificacao.num_instrumento||'projeto'}_${new Date().toISOString().substring(0,10)}.json`;
+  a.click();
+  toast('Projeto salvo!');
+}
+
+function loadProject() { el('load-project-input').click(); }
+
+function doLoadProject(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const loaded = JSON.parse(e.target.result);
+      Object.assign(STATE, loaded);
+      // Recarrega campos do passo 0
+      const ID = STATE.identificacao;
+      Object.keys(ID).forEach(k=>{ if(el(k)) el(k).value=ID[k]||''; });
+      if(ID.cnpj) setTimeout(lookupCNPJ, 600);
+      renderRepasses();
+      renderAditivos();
+      calcRecursos();
+      renderNFTable();
+      renderExtratoTable();
+      toast('Projeto carregado com sucesso!');
+      auditLog('Projeto carregado de arquivo JSON', 'ok');
+    } catch(err) {
+      toast('Erro ao carregar projeto: '+err.message, 'err');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value='';
+}
+
+function newProject() {
+  if(!confirm('Criar novo projeto? Todos os dados não salvos serão perdidos.')) return;
+  STATE = {
+    identificacao:{}, recursos:{saldo_anterior:0,repasses:[],aplic_financeiras:0,outras_receitas:0,recursos_proprios:0},
+    notas:[], extrato:[], matches:[], aditivos:[],
+    nextNFId:1, nextExtId:1, nextMatchId:1, editingNFIdx:null,
+  };
+  location.reload();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITÁRIOS AUXILIARES
+// ═══════════════════════════════════════════════════════════════
+function normalizeDate(s) {
+  if(!s) return '';
+  // DD/MM/YYYY → YYYY-MM-DD
+  const m1 = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(m1) return `${m1[3]}-${m1[2]}-${m1[1]}`;
+  const m2 = s.match(/^(\d{2})\/(\d{2})\/(\d{2})$/);
+  if(m2) return `20${m2[3]}-${m2[2]}-${m2[1]}`;
+  // YYYY-MM-DD
+  const m3 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m3) return `${m3[1]}-${m3[2]}-${m3[3]}`;
+  return '';
+}
+
+function extractDocNum(linha) {
+  const m = linha.match(/\b(\d{5,10})\b/);
+  return m ? m[1] : '';
+}
+
+function autoCategorize(text) {
+  const lower = (text||'').toLowerCase();
+  for(const entry of KEYWORD_CAT) {
+    if(entry.keys.some(k=>lower.includes(k))) return entry.cat;
+  }
+  return 'outras';
+}
+
+function mapCatLabel(label) {
+  const lower = label.toLowerCase();
+  const found = CATEGORIAS.find(c=>c.label.toLowerCase().includes(lower.substring(0,12)));
+  return found ? found.id : autoCategorize(label);
+}
+
+function addFilePill(containerId, name, status) {
+  const container = el(containerId);
+  const pill = document.createElement('div');
+  pill.className = `file-pill ${status}`;
+  pill.innerHTML = `<span class="pill-icon">${status==='ok'?'✅':'❌'}</span>${name.substring(0,30)}<span class="pill-remove" onclick="this.parentElement.remove()">✕</span>`;
+  container.appendChild(pill);
+}
+
+function closeModal(id) { el(id).classList.remove('open'); }
+
+// Drag-and-drop nas upload zones
+['xml-zone','danfe-zone','extrato-pdf-zone','extrato-csv-zone'].forEach(id=>{
+  const zone = el(id);
+  if(!zone) return;
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', ()=>zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e=>{ e.preventDefault(); zone.classList.remove('drag-over'); });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CNPJ → RECEITA FEDERAL (ReceitaWS – proxy CORS público)
+// ═══════════════════════════════════════════════════════════════
+async function lookupCNPJ() {
+  const raw = v('cnpj').replace(/\D/g,'');
+  if(raw.length !== 14) return;
+  const status = el('cnpj-status');
+  status.className = 'cnpj-status loading';
+  status.textContent = '⏳ Consultando Receita Federal...';
+
+  // Tenta ReceitaWS (CORS livre)
+  const urls = [
+    `https://receitaws.com.br/v1/cnpj/${raw}`,
+    `https://brasilapi.com.br/api/cnpj/v1/${raw}`,
+  ];
+
+  for(const url of urls) {
+    try {
+      const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if(!resp.ok) continue;
+      const d = await resp.json();
+
+      // Normaliza campos entre ReceitaWS e BrasilAPI
+      const razao   = d.nome        || d.razao_social       || '';
+      const fantasia = d.fantasia   || d.nome_fantasia       || '';
+      const logr    = d.logradouro  || d.descricao_tipo_logradouro ? `${d.descricao_tipo_logradouro} ${d.logradouro}` : '';
+      const num     = d.numero      || '';
+      const comp    = d.complemento || '';
+      const bairro  = d.bairro      || '';
+      const mun     = d.municipio   || d.municipio           || '';
+      const uf      = d.uf          || d.uf                  || '';
+      const cep     = d.cep         ? d.cep.replace(/\D/g,'').replace(/(\d{5})(\d{3})/,'$1-$2') : '';
+      const sit     = d.situacao    || d.descricao_situacao_cadastral || '';
+      const email   = d.email       || '';
+      const tel     = d.telefone    || '';
+
+      const endereco = [logr, num, comp, bairro, mun, uf, cep?`CEP ${cep}`:''].filter(Boolean).join(', ');
+
+      // Preenche campos automaticamente
+      const setVal = (id, val) => { const el2 = el(id); if(el2 && val){ el2.value = val; el2.classList.add('auto-filled'); } };
+      setVal('beneficiario', razao);
+      setVal('endereco',     endereco);
+      setVal('email',        email);
+      if(tel) setVal('telefone', tel);
+
+      // Situação
+      if(sit && sit.toUpperCase() !== 'ATIVA') {
+        status.className = 'cnpj-status warn';
+        status.textContent = `⚠️ ${razao}${fantasia?' ('+fantasia+')':''} — Situação: ${sit}`;
+      } else {
+        status.className = 'cnpj-status ok';
+        status.textContent = `✓ ${razao}${fantasia?' · '+fantasia:''} — Ativa`;
+      }
+      auditLog(`CNPJ ${raw}: ${razao} – preenchimento automático OK`, 'ok');
+      return;
+    } catch(e) { /* tenta próxima URL */ }
+  }
+
+  // Se todas as tentativas falharam (CORS bloqueado em produção)
+  status.className = 'cnpj-status err';
+  status.textContent = '⚠️ Consulta bloqueada pelo navegador (CORS). Preencha manualmente ou use o link abaixo.';
+  auditLog(`CNPJ ${raw}: consulta automática bloqueada – preencha manualmente`, 'warn');
+  // Fallback: abre no CNPJ Biz em nova aba
+  const fallback = document.createElement('a');
+  fallback.href = `https://www.cnpjbiz.com.br/cnpj/${raw}`;
+  fallback.target = '_blank';
+  fallback.textContent = ' 🔗 Consultar manualmente';
+  fallback.style.cssText = 'font-size:.72rem;color:var(--teal);text-decoration:underline;';
+  el('cnpj-status').appendChild(fallback);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BUSCA DIÁRIO OFICIAL DO ESTADO DE SP (DOE-SP)
+// Usa a API pública de pesquisa do portal doe.sp.gov.br
+// ═══════════════════════════════════════════════════════════════
+async function searchDOE() {
+  const query = el('doe-search-input').value.trim();
+  if(!query) { toast('Digite um número de instrumento, CNPJ ou nome para pesquisar','warn'); return; }
+
+  const wrap = el('doe-results-wrap');
+  const box  = el('doe-results-box');
+  wrap.style.display='block';
+  box.innerHTML = '<div class="conv-loading"><span class="spinner"></span> Pesquisando no Diário Oficial do Estado de SP...</div>';
+
+  // ── Estratégia de busca ──
+  // 1. API oficial do DOE-SP: https://www.imprensaoficial.com.br/DO/GatewayPDF.do?action=pesquisar
+  // 2. Fallback: pesquisa Google indexada (corpora pública)
+  // 3. Fallback: API BuscaLegis/dados abertos SP
+  
+  const results = [];
+  const cnpjRaw = query.replace(/\D/g,'');
+  const isCNPJ  = cnpjRaw.length >= 8;
+
+  // Busca via IOSP API (portal imprensaoficial.com.br – endpoint de pesquisa JSON)
+  try {
+    // Endpoint oficial do portal Imprensa Oficial SP
+    const baseUrl = 'https://www.imprensaoficial.com.br/DO/BuscaDO2001Documento_11_3.aspx';
+    // Termos de busca: convênio + entidade
+    const termBase = isCNPJ ? `convenio ${cnpjRaw}` : `convenio "${query}"`;
+    
+    // Usamos a API de busca pública do DOE-SP via fetch direto (sem CORS issue pois é GET)
+    // Como o portal usa ASP.NET e tem CORS, usamos um proxy de terceiros conhecido
+    // OU usamos a API Dados Abertos SP (SIESP) que é REST/JSON
+    
+    // Dados Abertos SP – Convênios e Termos (SIESP)
+    // https://www.siesp.sp.gov.br/portaltransparencia/
+    // API: https://dados.sp.gov.br/api/3/action/datastore_search
+    
+    // Tentativa 1: API pública dados.sp.gov.br (CKAN) – conjuntos de convênios
+    const apiUrl = `https://dados.sp.gov.br/api/3/action/datastore_search?resource_id=a98cc7f8-8a3e-4756-820d-9b2d5d1df7d4&q=${encodeURIComponent(query)}&limit=20`;
+    const r1 = await fetch(apiUrl, { signal: AbortSignal.timeout(6000) });
+    if(r1.ok) {
+      const j1 = await r1.json();
+      if(j1.result?.records?.length > 0) {
+        j1.result.records.forEach(rec => {
+          results.push({
+            numero:    rec['NR_CONVENIO'] || rec['numero'] || rec['NR_INSTRUMENTO'] || '',
+            objeto:    rec['DS_OBJETO'] || rec['objeto'] || rec['OBJETO'] || '',
+            orgao:     rec['NM_ORGAO'] || rec['orgao_concessor'] || rec['ORGAO'] || '',
+            entidade:  rec['NM_ENTIDADE'] || rec['beneficiario'] || rec['ENTIDADE'] || '',
+            cnpj:      rec['NR_CNPJ'] || rec['cnpj'] || '',
+            valor:     rec['VL_CONVENIO'] || rec['valor'] || 0,
+            data_pub:  rec['DT_PUBLICACAO'] || rec['data_publicacao'] || '',
+            vigencia:  rec['DT_VIGENCIA'] || rec['data_vigencia'] || '',
+            exercicio: rec['AA_EXERCICIO'] || rec['exercicio'] || '',
+            tipo:      rec['TP_INSTRUMENTO'] || rec['tipo'] || 'CONVÊNIO',
+            origem:    'dados.sp.gov.br',
+            url:       '',
+          });
+        });
+      }
+    }
+  } catch(e) { /* continua */ }
+
+  // Tentativa 2: API SICONV-SP / Portal Transparência SP
+  if(results.length === 0) {
+    try {
+      const apiUrl2 = `https://www.transparencia.sp.gov.br/api/convenios?q=${encodeURIComponent(query)}&limit=20`;
+      const r2 = await fetch(apiUrl2, { signal: AbortSignal.timeout(5000) });
+      if(r2.ok) {
+        const j2 = await r2.json();
+        const recs = j2.data || j2.results || j2 || [];
+        (Array.isArray(recs)?recs:[]).forEach(rec => {
+          results.push({
+            numero:    rec.numero_convenio || rec.numero || query,
+            objeto:    rec.objeto || rec.descricao || '',
+            orgao:     rec.orgao_concessor || rec.secretaria || '',
+            entidade:  rec.entidade || rec.beneficiario || '',
+            cnpj:      rec.cnpj || '',
+            valor:     rec.valor_total || rec.valor || 0,
+            data_pub:  rec.data_publicacao || '',
+            vigencia:  rec.data_vigencia || '',
+            exercicio: rec.exercicio || new Date().getFullYear(),
+            tipo:      rec.tipo_instrumento || 'CONVÊNIO',
+            origem:    'transparencia.sp.gov.br',
+            url:       rec.url_doe || '',
+          });
+        });
+      }
+    } catch(e) { /* continua */ }
+  }
+
+  // Fallback sintético: gera resultado baseado nos dados já preenchidos na tela
+  // (útil quando APIs estão offline – ao menos pré-popula com dados conhecidos)
+  if(results.length === 0) {
+    const numInstr = v('num_instrumento') || query;
+    const cnpjVal  = v('cnpj') || '';
+    const bene     = v('beneficiario') || '';
+    const orgao    = v('orgao_concessor') || '';
+    const exerc    = v('exercicio') || new Date().getFullYear();
+
+    // Tenta buscar no cache localStorage de projetos anteriores
+    try {
+      const allKeys = Object.keys(localStorage).filter(k => k.startsWith('rp12_'));
+      allKeys.forEach(k => {
+        try {
+          const proj = JSON.parse(localStorage.getItem(k));
+          const id   = proj?.identificacao || {};
+          if(id.num_instrumento && (
+            id.num_instrumento.includes(query) ||
+            (id.cnpj||'').replace(/\D/g,'').includes(cnpjRaw) ||
+            (id.beneficiario||'').toLowerCase().includes(query.toLowerCase())
+          )) {
+            results.push({
+              numero: id.num_instrumento, objeto: id.objeto, orgao: id.orgao_concessor,
+              entidade: id.beneficiario, cnpj: id.cnpj, valor: 0,
+              data_pub: id.data_assinatura, vigencia: id.data_vigencia,
+              exercicio: id.exercicio, tipo: id.tipo_instrumento,
+              origem: '💾 Projeto salvo localmente', url: '',
+            });
+          }
+        } catch(e){}
+      });
+    } catch(e){}
+
+    // Se ainda vazio, gera um template preenchido com os dados atuais
+    if(results.length === 0) {
+      results.push({
+        numero: numInstr, objeto: v('objeto')||'', orgao,
+        entidade: bene, cnpj: cnpjVal, valor: 0,
+        data_pub: v('data_assinatura')||'', vigencia: v('data_vigencia')||'',
+        exercicio: exerc, tipo: v('tipo_instrumento')||'CONVÊNIO',
+        origem: '⚠️ Dados atuais (APIs indisponíveis — confirme no DOE-SP)',
+        url: `https://www.imprensaoficial.com.br/DO/BuscaDO2001Documento_11_3.aspx`,
+      });
+    }
+  }
+
+  renderDOEResults(results);
+}
+
+function renderDOEResults(results) {
+  const box = el('doe-results-box');
+  if(!results.length) {
+    box.innerHTML = '<div class="conv-loading">Nenhum resultado encontrado. Refine a busca ou preencha manualmente.</div>';
+    return;
+  }
+  box.innerHTML = results.map((r,i) => `
+    <div class="conv-result-item" id="doe-item-${i}" onclick="selectDOEItem(${i})">
+      <div class="conv-title">${r.tipo} Nº ${r.numero} · Exercício ${r.exercicio||''}</div>
+      <div style="font-size:.8rem;color:var(--text);margin:.1rem 0">${r.objeto||'(objeto não informado)'}</div>
+      <div class="conv-meta">
+        <span>🏛 ${r.orgao||'—'}</span>
+        <span>🏥 ${r.entidade||'—'}</span>
+        ${r.cnpj?`<span>CNPJ: ${r.cnpj}</span>`:''}
+        ${r.valor?`<span>R$ ${parseFloat(r.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`:''}
+        ${r.vigencia?`<span>Vigência: ${r.vigencia}</span>`:''}
+        ${r.url?`<a href="${r.url}" target="_blank" onclick="event.stopPropagation()" style="color:var(--teal)">🔗 DOE</a>`:''}
+        <span class="conv-badge">📰 ${r.origem||'DOE-SP'}</span>
+      </div>
+    </div>`).join('');
+  // Guarda resultados no window para seleção posterior
+  window._doeResults = results;
+}
+
+function selectDOEItem(i) {
+  document.querySelectorAll('.conv-result-item').forEach(el2=>el2.classList.remove('selected'));
+  el(`doe-item-${i}`)?.classList.add('selected');
+  const r = window._doeResults[i];
+  if(!r) return;
+
+  // Preenche campos Aba 0
+  const setVal = (id, val, addToStep0=true) => {
+    const field = el(id);
+    if(field && val) { field.value = val; field.classList.add('auto-filled'); }
+  };
+  if(r.orgao)    setVal('orgao_concessor', r.orgao);
+  if(r.objeto)   setVal('objeto', r.objeto);
+  if(r.numero)   setVal('num_instrumento', r.numero);
+  if(r.exercicio) setVal('exercicio', r.exercicio);
+  if(r.tipo)     { const s=el('tipo_instrumento'); if(s){ for(let o of s.options){ if(o.value.includes(r.tipo)) o.selected=true; } } }
+  if(r.data_pub) setVal('data_assinatura', r.data_pub.substring(0,10));
+  if(r.vigencia) setVal('data_vigencia', r.vigencia.substring(0,10));
+  if(r.cnpj)     { setVal('cnpj', r.cnpj); lookupCNPJ(); }
+
+  // Preenche repasse automaticamente se tiver valor
+  if(r.valor && parseFloat(r.valor)>0) {
+    STATE.recursos.repasses = [{
+      data_prevista: r.data_pub||'', valor_previsto: parseFloat(r.valor)||0,
+      data_repasse: '', num_doc: '', valor_repassado: parseFloat(r.valor)||0,
+    }];
+    renderRepasses();
+  }
+
+  // Mostra badge de selecionado
+  el('doe-selected-info').style.display='block';
+  el('doe-selected-label').textContent = `${r.tipo} Nº ${r.numero} – ${r.entidade||r.orgao}`;
+  toast('✓ Convênio selecionado e campos preenchidos!', 'ok');
+  auditLog(`DOE-SP: Convênio ${r.numero} selecionado – preenchimento automático`, 'ok');
+}
+
+function clearDOEResults() {
+  el('doe-results-wrap').style.display='none';
+  el('doe-selected-info').style.display='none';
+  el('doe-results-box').innerHTML='';
+  window._doeResults=[];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ABA 6 – PRÉ-CLASSIFICAÇÃO AUTOMÁTICA (preview com validação)
+// ═══════════════════════════════════════════════════════════════
+function renderCatPreview() {
+  const list = el('cat-preview-list');
+  if(!list) return;
+  const notas = STATE.notas;
+  el('cv-total').textContent = `${notas.length} despesa${notas.length!==1?'s':''}`;
+
+  if(!notas.length) {
+    list.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:.82rem;">Nenhuma despesa importada. Adicione NFs na Aba 3.</div>';
+    return;
+  }
+
+  list.innerHTML = notas.map((nf,i)=>{
+    const catLabel = getCatLabel(nf.categoria);
+    const isConfirmed = nf._catConfirmed;
+    const matchInfo  = STATE.matches.find(m=>m.nfIdx===i);
+    const pgtoInfo   = matchInfo ? `📅 pago em ${fmtDate(matchInfo.dataPgto)}` : '⚠️ sem match';
+    const colLabel   = nf.colH>0 ? '(H) Desp. ant.' : '(I) Neste exercício';
+    return `
+      <div class="cat-preview-item" id="cp-item-${i}">
+        <span class="nf-num">#${nf.num||i+1}<br>${fmtDate(nf.data)}</span>
+        <div style="overflow:hidden">
+          <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nf.fornecedor||'(sem nome)'}</div>
+          <div style="font-size:.68rem;color:var(--muted)">${pgtoInfo} · ${colLabel} · Fonte: ${nf.fonte||'—'}</div>
+        </div>
+        <span class="nf-val">${fmt(nf.valor)}</span>
+        <select class="cat-sel" onchange="updateCatPreview(${i},this.value)">
+          ${CATEGORIAS.map(c=>`<option value="${c.id}" ${c.id===nf.categoria?'selected':''}>${c.label}</option>`).join('')}
+        </select>
+        <span class="auto-tag ${isConfirmed?'confirmed':''}">
+          ${isConfirmed?'✓ OK':'🤖 Auto'}
+          <button onclick="confirmOneCat(${i})" title="Confirmar esta" 
+            style="background:none;border:none;cursor:pointer;font-size:.9rem;padding:0 .2rem;">✓</button>
+        </span>
+      </div>`;
+  }).join('');
+}
+
+function updateCatPreview(i, catId) {
+  STATE.notas[i].categoria = catId;
+  STATE.notas[i]._catConfirmed = false;
+  const item = el(`cp-item-${i}`);
+  if(item) item.querySelector('.auto-tag').classList.remove('confirmed');
+  renderCatTable(); // atualiza tabela abaixo
+}
+
+function confirmOneCat(i) {
+  STATE.notas[i]._catConfirmed = true;
+  const item = el(`cp-item-${i}`);
+  if(item) {
+    const tag = item.querySelector('.auto-tag');
+    tag.classList.add('confirmed');
+    tag.querySelector('button').textContent='✓';
+  }
+}
+
+function confirmAllCategories() {
+  STATE.notas.forEach((_,i) => { STATE.notas[i]._catConfirmed = true; });
+  renderCatPreview();
+  renderCatTable();
+  toast(`✓ ${STATE.notas.length} categorias confirmadas!`,'ok');
+  auditLog('Todas as categorias confirmadas pelo operador.','ok');
+}
+
+function rerunAutoCateg() {
+  STATE.notas.forEach((nf,i) => {
+    const newCat = autoCategorize((nf.fornecedor||'')+ ' '+(nf.descricao||''));
+    STATE.notas[i].categoria = newCat;
+    STATE.notas[i]._catConfirmed = false;
+  });
+  renderCatPreview();
+  renderCatTable();
+  toast('Categorias re-classificadas automaticamente.','ok');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OVERRIDE goStep para chamar renderCatPreview na aba 5
+// ═══════════════════════════════════════════════════════════════
+
+function init() {
+  // Tenta carregar projeto do localStorage
+  try {
+    const saved = localStorage.getItem('rp12_projeto');
+    if(saved) {
+      const loaded = JSON.parse(saved);
+      Object.assign(STATE, loaded);
+      const ID = STATE.identificacao;
+      Object.keys(ID).forEach(k=>{ if(el(k)) el(k).value=ID[k]||''; });
+    }
+  } catch(e){}
+
+  renderRepasses();
+  renderAditivos();
+  calcRecursos();
+  populateCatSelect('m-categoria');
+
+  // Preenche o select de categorias no modal
+  el('m-categoria').innerHTML = CATEGORIAS.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+
+  auditLog('Sistema DIRD/RP-12 iniciado. TCE-SP IN 01/2024 · IN 02/2016 · Lei 13.019/2014', 'ok');
+  toast('Sistema pronto. Dr. Rafael Mendes – Especialista TCE-SP');
+  // Auto-consulta CNPJ se já preenchido
+  if(v('cnpj').replace(/\D/g,'').length===14) setTimeout(lookupCNPJ, 1000);
+  // Auto-popula campo de busca DOE com número do instrumento
+  if(v('num_instrumento')) el('doe-search-input').value = v('num_instrumento');
+}
+
+window.addEventListener('DOMContentLoaded', init);
+
+// Auto-save a cada 60s
+setInterval(()=>{
+  saveCurrentStepState();
+  try { localStorage.setItem('rp12_projeto', JSON.stringify(STATE)); } catch(e){}
+}, 60000);
+</script>
+</body>
+</html>
