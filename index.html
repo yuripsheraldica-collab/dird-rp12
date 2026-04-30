@@ -1,415 +1,803 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DIRD / RP-12 — Gerador TCE-SP | Dr. Rafael Mendes</title>
-  <style>
-    :root {
-      --primary: #0f172a; --secondary: #2563eb; --accent: #059669;
-      --bg: #f8fafc; --surface: #ffffff; --text: #1e293b; --muted: #64748b;
-      --border: #e2e8f0; --danger: #dc2626; --warning: #d97706;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
-    .container { max-width: 1280px; margin: 0 auto; padding: 20px; }
-    header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 20px 24px; border-radius: 12px; margin-bottom: 20px; }
-    header h1 { font-size: 1.6rem; font-weight: 700; }
-    header p { opacity: 0.85; font-size: 0.9rem; margin-top: 4px; }
-    .tabs { display: flex; gap: 6px; background: var(--surface); padding: 6px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-x: auto; margin-bottom: 20px; }
-    .tab { padding: 10px 16px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-weight: 500; color: var(--muted); white-space: nowrap; transition: 0.2s; }
-    .tab.active { background: var(--secondary); color: white; }
-    .panel { display: none; background: var(--surface); padding: 24px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); animation: fade 0.3s; }
-    .panel.active { display: block; }
-    @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 16px 0; }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    label { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    input, select, textarea { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; transition: 0.2s; background: #f9fafb; }
-    input:focus, select:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); background: #fff; }
-    .btn { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.9rem; transition: 0.2s; }
-    .btn-primary { background: var(--secondary); color: white; }
-    .btn-success { background: var(--accent); color: white; }
-    .btn-danger { background: var(--danger); color: white; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .dropzone { border: 2px dashed var(--border); border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; background: #f8fafc; transition: 0.2s; }
-    .dropzone:hover { border-color: var(--secondary); background: #eff6ff; }
-    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.85rem; }
-    th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
-    th { background: #f1f5f9; font-weight: 600; color: var(--muted); position: sticky; top: 0; }
-    tr:hover { background: #f8fafc; }
-    .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
-    .badge-ok { background: #dcfce7; color: #166534; }
-    .badge-warn { background: #fef3c7; color: #92400e; }
-    .badge-err { background: #fee2e2; color: #991b1b; }
-    .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
-    .log { background: #0f172a; color: #94a3b8; padding: 12px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; max-height: 180px; overflow-y: auto; margin-top: 16px; }
-    .status { padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 0.85rem; display: none; }
-    .status.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .status.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-    .rp12-print { background: white; padding: 30px; border: 1px solid #cbd5e1; }
-    @media print {
-      .tabs, .actions, .dropzone, .log, header, .grid, .field { display: none !important; }
-      .container { max-width: 100%; padding: 0; }
-      .panel { box-shadow: none; padding: 0; }
-      table { page-break-inside: avoid; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIRD / RP-12 — Gerador TCE-SP | Dr. Rafael Mendes (MVP)</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; color: #333; background-color: #f4f4f4; }
+        h1, h2 { color: #2c3e50; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-top: 30px; }
+        section { margin-bottom: 40px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="text"], input[type="number"], input[type="date"], select {
+            width: calc(100% - 22px); /* Ajuste para padding e border */
+            padding: 10px;
+            margin: 5px 0 15px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        button:hover { background-color: #2980b9; }
+        .navigation-buttons { margin-top: 20px; text-align: right; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 0.9em; }
+        th { background-color: #ecf0f1; color: #333; }
+        #drop-area, #drop-area-extrato {
+            border: 2px dashed #a0a0a0;
+            padding: 30px;
+            text-align: center;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            color: #666;
+            font-size: 1.1em;
+        }
+        #drop-area.highlight, #drop-area-extrato.highlight {
+            border-color: #3498db !important;
+            background-color: #e8f5fd;
+            color: #2980b9;
+        }
+        #fileList div, #fileListExtrato div {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+            color: #444;
+        }
+        .hidden { display: none; }
+        .status-message { margin-top: 15px; padding: 10px; border-radius: 4px; }
+        .status-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status-info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        ol { list-style-type: decimal; padding-left: 20px; }
+        ol li { margin-bottom: 5px; }
+    </style>
+    <!-- Bibliotecas para processamento no navegador -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>DIRD / RP-12 — Gerador TCE-SP | Dr. Rafael Mendes</h1>
-      <p>Conformidade IN 01/2024 · IN 02/2016 · Lei 13.019/2014 · ITG 2002 | Automação Integral</p>
-    </header>
+    <h1>DIRD / RP-12 — Gerador TCE-SP | Dr. Rafael Mendes (MVP)</h1>
+    <p>Conformidade IN 01/2024 · IN 02/2016 · Lei 13.019/2014 · ITG 2002 | Automação Integral</p>
 
-    <nav class="tabs">
-      <button class="tab active" data-tab="id">1. Identificação</button>
-      <button class="tab" data-tab="rec">2. Recursos</button>
-      <button class="tab" data-tab="nf">3. Notas Fiscais</button>
-      <button class="tab" data-tab="ext">4. Extrato</button>
-      <button class="tab" data-tab="conc">5. Conciliação</button>
-      <button class="tab" data-tab="dir">6. DIRD / RP-12</button>
+    <nav>
+        <ol>
+            <li>Identificação</li>
+            <li>Recursos</li>
+            <li>Notas Fiscais</li>
+            <li>Extrato</li>
+            <li>Conciliação</li>
+            <li>DIRD / RP-12 (Futuro)</li>
+        </ol>
     </nav>
 
-    <!-- 1. Identificação -->
-    <section id="id" class="panel active">
-      <h2>Identificação do Instrumento</h2>
-      <div class="grid">
-        <div class="field"><label>Tipo</label><select id="tipo"><option>Convênio</option><option>Termo de Colaboração</option><option>Termo de Fomento</option><option>Contrato de Gestão</option></select></div>
-        <div class="field"><label>Nº Instrumento</label><input type="text" id="numInst" placeholder="000/AAAA"></div>
-        <div class="field"><label>Objeto</label><input type="text" id="objeto" value="Custeio - Aquisição de material e prestação de serviços de saúde"></div>
-        <div class="field"><label>Órgão Concessor</label><input type="text" id="orgao" placeholder="Ex: SES-SP"></div>
-        <div class="field"><label>Razão Social Entidade</label><input type="text" id="razao"></div>
-        <div class="field"><label>CNPJ</label><input type="text" id="cnpjEnt" placeholder="00.000.000/0000-00"></div>
-        <div class="field"><label>Exercício</label><input type="number" id="exercicio" value="2026"></div>
-        <div class="field"><label>Responsável Legal</label><input type="text" id="respLegal"></div>
-        <div class="field"><label>Cidade/UF Data</label><input type="text" id="cidadeData" placeholder="São Paulo/SP, 01/04/2026"></div>
-      </div>
-      <div class="actions"><button class="btn btn-primary" onclick="go('rec')">Próximo →</button></div>
+    <section id="identificacao">
+        <h2>Identificação do Instrumento</h2>
+        <label for="tipoInstrumento">Tipo:</label>
+        <select id="tipoInstrumento">
+            <option>Convênio</option>
+            <option>Termo de Colaboração</option>
+            <option>Termo de Fomento</option>
+            <option>Contrato de Gestão</option>
+        </select>
+
+        <label for="numeroInstrumento">Nº Instrumento:</label>
+        <input type="text" id="numeroInstrumento">
+
+        <label for="objeto">Objeto:</label>
+        <input type="text" id="objeto">
+
+        <label for="orgaoConcessor">Órgão Concessor:</label>
+        <input type="text" id="orgaoConcessor">
+
+        <label for="razaoSocial">Razão Social Entidade:</label>
+        <input type="text" id="razaoSocial">
+
+        <label for="cnpj">CNPJ:</label>
+        <input type="text" id="cnpj">
+
+        <label for="exercicio">Exercício:</label>
+        <input type="number" id="exercicio" value="2024">
+
+        <label for="responsavelLegal">Responsável Legal:</label>
+        <input type="text" id="responsavelLegal">
+
+        <label for="cidadeUf">Cidade/UF:</label>
+        <input type="text" id="cidadeUf">
+
+        <label for="data">Data:</label>
+        <input type="date" id="data" value="2024-01-01">
+
+        <div class="navigation-buttons">
+            <button onclick="showSection('recursos')">Próximo →</button>
+        </div>
     </section>
 
-    <!-- 2. Recursos -->
-    <section id="rec" class="panel">
-      <h2>Demonstrativo de Recursos</h2>
-      <p class="status success">💡 Dica: Cole o valor total do repasse ou importe o CSV de repasses. O sistema calcula automaticamente as colunas (A) a (G).</p>
-      <div class="grid">
-        <div class="field"><label>(A) Repasses no Exercício</label><input type="text" id="repA" placeholder="0,00"></div>
-        <div class="field"><label>(C) Saldo Exercício Anterior</label><input type="text" id="repC" placeholder="0,00"></div>
-        <div class="field"><label>(D) Rendas Aplicações/Outras</label><input type="text" id="repD" placeholder="0,00"></div>
-        <div class="field"><label>(F) Recursos Próprios</label><input type="text" id="repF" placeholder="0,00"></div>
-        <div class="field"><label>(B) Total Repasses</label><input type="text" id="repB" readonly style="background:#e2e8f0; font-weight:700"></div>
-        <div class="field"><label>(E) Total Públicos (A+B+C+D)</label><input type="text" id="repE" readonly style="background:#e2e8f0; font-weight:700"></div>
-        <div class="field"><label>(G) Total Disponível (E+F)</label><input type="text" id="repG" readonly style="background:#e2e8f0; font-weight:700"></div>
-      </div>
-      <div class="actions">
-        <button class="btn btn-outline" onclick="go('id')">← Voltar</button>
-        <button class="btn btn-primary" onclick="calcRep(); go('nf')">Calcular & Avançar →</button>
-      </div>
+    <section id="recursos" class="hidden">
+        <h2>Demonstrativo de Recursos</h2>
+        <p>💡 Dica: Cole o valor total do repasse ou importe o CSV de repasses. O sistema calcula automaticamente as colunas (A) a (G).</p>
+
+        <label for="repassesExercicio">(A) Repasses no Exercício:</label>
+        <input type="number" id="repassesExercicio" value="0">
+
+        <label for="saldoAnterior">(C) Saldo Exercício Anterior:</label>
+        <input type="number" id="saldoAnterior" value="0">
+
+        <label for="rendasAplicacoes">(D) Rendas Aplicações/Outras:</label>
+        <input type="number" id="rendasAplicacoes" value="0">
+
+        <label for="recursosProprios">(F) Recursos Próprios:</label>
+        <input type="number" id="recursosProprios" value="0">
+
+        <p>(B) Total Repasses: <span id="totalRepasses">0.00</span></p>
+        <p>(E) Total Públicos (A+C+D): <span id="totalPublicos">0.00</span></p>
+        <p>(G) Total Disponível (E+F): <span id="totalDisponivel">0.00</span></p>
+
+        <div class="navigation-buttons">
+            <button onclick="showSection('identificacao')">← Voltar</button>
+            <button onclick="calcularRecursos()">Calcular & Avançar →</button>
+        </div>
     </section>
 
-    <!-- 3. Notas Fiscais -->
-    <section id="nf" class="panel">
-      <h2>Importação Inteligente de NF-e</h2>
-      <div class="dropzone" id="dropXML">
-        📄 Arraste XMLs de NF-e ou clique para selecionar
-        <input type="file" id="xmlInput" multiple accept=".xml" style="display:none">
-      </div>
-      <div class="status success">✅ Extração automática: Data, Nº NF, Credor, CNPJ, Valor Bruto e Classificação RP-12.</div>
-      <table>
-        <thead><tr><th>#</th><th>Emissão</th><th>Nº NF</th><th>Credor</th><th>CNPJ</th><th>Valor (R$)</th><th>Categoria</th><th>Ações</th></tr></thead>
-        <tbody id="tbNF"></tbody>
-      </table>
-      <div class="actions">
-        <button class="btn btn-outline" onclick="go('rec')">← Voltar</button>
-        <button class="btn btn-primary" onclick="go('ext')">Próximo: Extrato →</button>
-      </div>
+    <section id="notasFiscais" class="hidden">
+        <h2>Importação Inteligente de Documentos Fiscais</h2>
+        <p>📄 Arraste arquivos (XML, PDF, CSV, Imagens) ou clique para selecionar</p>
+        <p>✅ Extração automática: Data, Nº NF, Credor, CNPJ, Valor Bruto e Classificação RP-12.</p>
+        <p class="status-info">⚠️ **Atenção:** Extração de dados de PDF e Imagens (OCR) é experimental e pode ser imprecisa. Verifique os dados extraídos.</p>
+
+        <div id="drop-area">
+            Arraste e solte seus arquivos aqui ou <input type="file" id="fileInput" multiple accept=".xml,.pdf,.csv,.jpg,.jpeg,.png">
+        </div>
+
+        <div id="fileList" style="margin-top: 15px;">
+            <!-- Arquivos carregados e status serão listados aqui -->
+        </div>
+
+        <table id="nfTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Emissão</th>
+                    <th>Nº NF</th>
+                    <th>Credor</th>
+                    <th>CNPJ</th>
+                    <th>Valor (R$)</th>
+                    <th>Categoria</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Linhas de NF-e serão adicionadas aqui via JavaScript -->
+            </tbody>
+        </table>
+
+        <div class="navigation-buttons">
+            <button onclick="showSection('recursos')">← Voltar</button>
+            <button onclick="showSection('extrato')">Próximo: Extrato →</button>
+        </div>
     </section>
 
-    <!-- 4. Extrato -->
-    <section id="ext" class="panel">
-      <h2>Extrato Bancário (OFX/CSV)</h2>
-      <div class="dropzone">
-        🏦 Arraste arquivo OFX, CSV ou TXT do Internet Banking
-        <input type="file" id="extInput" accept=".ofx,.csv,.txt" style="display:none">
-      </div>
-      <table>
-        <thead><tr><th>#</th><th>Data</th><th>Histórico</th><th>Doc</th><th>Débito (R$)</th><th>Conciliado</th></tr></thead>
-        <tbody id="tbExt"></tbody>
-      </table>
-      <div class="actions">
-        <button class="btn btn-outline" onclick="go('nf')">← Voltar</button>
-        <button class="btn btn-primary" onclick="go('conc')">Próximo: Conciliação →</button>
-      </div>
+    <section id="extrato" class="hidden">
+        <h2>Extrato Bancário (OFX/CSV)</h2>
+        <p>🏦 Arraste arquivo OFX, CSV ou TXT do Internet Banking</p>
+        <p class="status-info">⚠️ **Atenção:** Extração de dados de OFX e TXT é experimental e pode ser imprecisa. Verifique os dados extraídos.</p>
+
+        <div id="drop-area-extrato">
+            Arraste e solte seu extrato aqui ou <input type="file" id="fileInputExtrato" multiple accept=".ofx,.csv,.txt">
+        </div>
+        <div id="fileListExtrato" style="margin-top: 15px;"></div>
+
+        <table id="extratoTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Data</th>
+                    <th>Histórico</th>
+                    <th>Doc</th>
+                    <th>Débito (R$)</th>
+                    <th>Crédito (R$)</th>
+                    <th>Conciliado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Linhas do extrato serão adicionadas aqui via JavaScript -->
+            </tbody>
+        </table>
+
+        <div class="navigation-buttons">
+            <button onclick="showSection('notasFiscais')">← Voltar</button>
+            <button onclick="showSection('conciliacao')">Próximo: Conciliação →</button>
+        </div>
     </section>
 
-    <!-- 5. Conciliação -->
-    <section id="conc" class="panel">
-      <h2>Conciliação Automática</h2>
-      <button class="btn btn-success" onclick="runConc()">⚡ Executar Conciliação & Calcular DIRD</button>
-      <table>
-        <thead><tr><th>NF</th><th>Credor</th><th>Data NF</th><th>Valor NF</th><th>Data Pgto</th><th>Valor Pgto</th><th>Score</th><th>Status</th></tr></thead>
-        <tbody id="tbConc"></tbody>
-      </table>
-      <div class="log" id="log">▶ Aguardando execução...</div>
-      <div class="actions">
-        <button class="btn btn-outline" onclick="go('ext')">← Voltar</button>
-        <button class="btn btn-primary" onclick="renderDIRD(); go('dir')">Gerar DIRD / RP-12 →</button>
-      </div>
+    <section id="conciliacao" class="hidden">
+        <h2>Conciliação Automática</h2>
+        <button onclick="executarConciliacao()">⚡ Executar Conciliação & Calcular DIRD</button>
+        <p id="conciliacaoStatus" class="status-info">▶ Aguardando execução...</p>
+
+        <table id="conciliacaoTable">
+            <thead>
+                <tr>
+                    <th>NF</th>
+                    <th>Credor</th>
+                    <th>Data NF</th>
+                    <th>Valor NF</th>
+                    <th>Data Pgto</th>
+                    <th>Valor Pgto</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Resultados da conciliação aqui -->
+            </tbody>
+        </table>
+
+        <div class="navigation-buttons">
+            <button onclick="showSection('extrato')">← Voltar</button>
+            <button onclick="showSection('dirdRp12')">Gerar DIRD / RP-12 →</button>
+        </div>
     </section>
 
-    <!-- 6. DIRD / RP-12 -->
-    <section id="dir" class="panel">
-      <h2>DIRD / RP-12 — Documento Oficial</h2>
-      <div id="dirPreview"></div>
-      <div class="actions">
-        <button class="btn btn-outline" onclick="go('conc')">← Voltar</button>
-        <button class="btn btn-success" onclick="window.print()">📄 Exportar PDF Oficial</button>
-        <button class="btn btn-primary" onclick="exportJSON()">💾 Backup JSON</button>
-      </div>
+    <section id="dirdRp12" class="hidden">
+        <h2>DIRD / RP-12 — Documento Oficial</h2>
+        <p class="status-info">Esta seção será implementada em fases futuras do projeto.</p>
+        <!-- Conteúdo do DIRD/RP-12 será gerado aqui -->
+        <p>Conteúdo do DIRD/RP-12...</p>
+
+        <div class="navigation-buttons">
+            <button onclick="showSection('conciliacao')">← Voltar</button>
+            <button onclick="exportarPdf()" disabled>📄 Exportar PDF Oficial</button>
+            <button onclick="backupJson()" disabled>💾 Backup JSON</button>
+        </div>
     </section>
-  </div>
 
-  <script>
-    // --- STATE & UTILS ---
-    let nfData = [];
-    let extData = [];
-    let concData = [];
+    <script>
+        // Configuração do PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
 
-    function go(tab) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-      document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === tab));
-    }
+        let currentSection = 'identificacao';
+        const sections = ['identificacao', 'recursos', 'notasFiscais', 'extrato', 'conciliacao', 'dirdRp12'];
+        let processedNFs = []; // Array para armazenar as NFs processadas
+        let processedExtratos = []; // Array para armazenar os extratos processados
 
-    const fmt = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 }).format(v);
-    const parseDate = str => {
-      if (!str) return '';
-      let d = new Date(str);
-      if (isNaN(d)) {
-        const p = str.match(/(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})/);
-        if (p) d = new Date(`${p[3]}-${p[2]}-${p[1]}`);
-      }
-      return isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
-    };
-    const log = msg => {
-      const el = document.getElementById('log');
-      el.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
-      el.scrollTop = el.scrollHeight;
-    };
-
-    // --- CLASSIFIER ENGINE (CORREÇÃO CRÍTICA) ---
-    function classify(desc) {
-      if (!desc) return 'Outras Despesas';
-      const d = desc.toLowerCase();
-      const rules = [
-        { k: ['medicamento', 'farmácia', 'remédio', 'drogaria'], c: 'Medicamentos' },
-        { k: ['médico', 'hospital', 'clínica', 'consulta', 'saúde', 'exame', 'laboratório', 'procedimento', 'yasmin', 'diagnóstico'], c: 'Serviço Médico' },
-        { k: ['água', 'luz', 'energia', 'telefone', 'internet', 'gás', 'esgoto', 'utilidade'], c: 'Utilidade Pública' },
-        { k: ['aluguel', 'locação', 'ar condicionado'], c: 'Aluguéis' },
-        { k: ['material', 'consumo', 'escritório', 'limpeza', 'informática'], c: 'Material de Consumo' },
-        { k: ['pessoal', 'salário', 'folha', 'inss', 'fgts'], c: 'Pessoal' },
-        { k: ['iss', 'pis', 'cofins', 'csll', 'irrf', 'inss', 'tributo', 'imposto'], c: 'Serviço Médico' } // Impostos sobre serviço = custo do serviço
-      ];
-      for (const r of rules) if (r.k.some(k => d.includes(k))) return r.c;
-      return 'Outras Despesas';
-    }
-
-    // --- XML PARSER (NF-e v4.0/3.1) ---
-    document.getElementById('xmlInput').addEventListener('change', e => {
-      Array.from(e.target.files).forEach(file => {
-        const r = new FileReader();
-        r.onload = evt => {
-          const doc = new DOMParser().parseFromString(evt.target.result, 'text/xml');
-          if (doc.querySelector('parsererror')) return log(`❌ XML inválido: ${file.name}`);
-          
-          const get = tag => doc.querySelector(tag)?.textContent?.trim() || '';
-          
-          // CORREÇÃO 1: Data robusta
-          let dh = get('dhEmi') || get('dEmi') || get('dhSaiEnt') || get('dSaiEnt');
-          
-          // CORREÇÃO 2: Nº NF estrito
-          const nNF = get('nNF');
-          if (!nNF) return log(`⚠️ ${file.name}: Sem número de NF.`);
-
-          // CORREÇÃO 3: Credor limpo
-          let cred = get('emit xNome') || get('dest xNome') || '';
-          cred = cred.replace(/\s*(LTDA|S\.A|SA|EIRELI|EPP|ME|HOSPITAL|CLÍNICA|CENTRO|SERVIÇOS)\b/gi, '').trim();
-
-          // CORREÇÃO 6: Valor preciso
-          let vNF = get('vNF').replace(',', '.');
-          vNF = parseFloat(vNF) || 0;
-
-          const desc = Array.from(doc.querySelectorAll('xProd')).map(n => n.textContent).join(' ');
-
-          nfData.push({
-            id: Date.now() + Math.random(),
-            dt: parseDate(dh),
-            nNF,
-            cred,
-            cnpj: get('emit CNPJ') || get('dest CNPJ'),
-            val: vNF,
-            cat: classify(desc),
-            desc: desc.slice(0, 40)
-          });
-          renderNF();
-          log(`✅ NF ${nNF} importada | ${cred} | ${fmt(vNF)} | ${classify(desc)}`);
-        };
-        r.readAsText(file);
-      });
-    });
-
-    function renderNF() {
-      const tb = document.getElementById('tbNF');
-      tb.innerHTML = '';
-      if (nfData.length === 0) return tb.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted)">Nenhuma NF importada.</td></tr>`;
-      nfData.forEach((n, i) => {
-        tb.innerHTML += `<tr>
-          <td>${i+1}</td><td>${n.dt}</td><td>${n.nNF}</td><td>${n.cred}</td><td>${n.cnpj}</td>
-          <td style="text-align:right">${fmt(n.val)}</td>
-          <td><select onchange="nfData[${i}].cat=this.value">${['Medicamentos','Serviço Médico','Utilidade Pública','Aluguéis','Material de Consumo','Pessoal','Outras Despesas'].map(c=>`<option ${n.cat===c?'selected':''}>${c}</option>`).join('')}</select></td>
-          <td><button class="btn btn-danger" style="padding:4px 8px" onclick="nfData.splice(${i},1);renderNF()">✕</button></td>
-        </tr>`;
-      });
-    }
-
-    // --- EXTRATO PARSER (CSV/OFX) ---
-    document.getElementById('extInput').addEventListener('change', e => {
-      const r = new FileReader();
-      r.onload = evt => {
-        const txt = evt.target.result;
-        const lines = txt.split(/\r?\n/).filter(l => l.trim());
-        extData = [];
-        lines.forEach(l => {
-          // Tenta detectar padrão CSV ou OFX
-          const cols = l.split(/[;|,]/).map(c => c.replace(/"/g, '').trim());
-          if (cols.length >= 4 && !isNaN(parseFloat(cols[3]?.replace(',', '.')))) {
-            extData.push({
-              dt: parseDate(cols[0] || cols[1]),
-              hist: cols[1] || cols[2],
-              doc: cols[2] || cols[3],
-              deb: parseFloat((cols[3] || '0').replace(',', '.'))
+        function showSection(sectionId) {
+            sections.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
             });
-          }
+            document.getElementById(sectionId).classList.remove('hidden');
+            currentSection = sectionId;
+        }
+
+        // Inicializa mostrando a primeira seção
+        showSection(currentSection);
+
+        // --- Funções Utilitárias ---
+        function parseDate(dateString) {
+            // Tenta parsear dd/mm/aaaa ou aaaa-mm-dd
+            if (dateString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                const [day, month, year] = dateString.split('/');
+                return new Date(year, month - 1, day);
+            }
+            if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                return new Date(dateString);
+            }
+            return null;
+        }
+
+        function formatCurrency(value) {
+            return (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        // --- Lógica para a seção de Recursos ---
+        function calcularRecursos() {
+            const repassesExercicio = parseFloat(document.getElementById('repassesExercicio').value) || 0;
+            const saldoAnterior = parseFloat(document.getElementById('saldoAnterior').value) || 0;
+            const rendasAplicacoes = parseFloat(document.getElementById('rendasAplicacoes').value) || 0;
+            const recursosProprios = parseFloat(document.getElementById('recursosProprios').value) || 0;
+
+            const totalRepasses = repassesExercicio;
+            const totalPublicos = repassesExercicio + saldoAnterior + rendasAplicacoes;
+            const totalDisponivel = totalPublicos + recursosProprios;
+
+            document.getElementById('totalRepasses').textContent = totalRepasses.toFixed(2);
+            document.getElementById('totalPublicos').textContent = totalPublicos.toFixed(2);
+            document.getElementById('totalDisponivel').textContent = totalDisponivel.toFixed(2);
+
+            showSection('notasFiscais');
+        }
+
+        // --- Lógica para a seção de Notas Fiscais ---
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const nfTableBody = document.querySelector('#nfTable tbody');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
         });
-        renderExt();
-        log(`📊 ${extData.length} lançamentos importados.`);
-      };
-      r.readAsText(e.target.files[0]);
-    });
 
-    function renderExt() {
-      const tb = document.getElementById('tbExt');
-      tb.innerHTML = '';
-      extData.forEach((e, i) => {
-        tb.innerHTML += `<tr><td>${i+1}</td><td>${e.dt}</td><td>${e.hist}</td><td>${e.doc}</td><td style="text-align:right">${fmt(e.deb)}</td><td>-</td></tr>`;
-      });
-    }
-
-    // --- CONCILIADOR AUTOMÁTICO ---
-    function runConc() {
-      concData = [];
-      const usedExt = new Set();
-      nfData.forEach(nf => {
-        let match = null;
-        for (let i = 0; i < extData.length; i++) {
-          if (usedExt.has(i)) continue;
-          const diffVal = Math.abs(nf.val - extData[i].deb);
-          const diffDays = nf.dt && extData[i].dt ? Math.abs(new Date(nf.dt.split('/').reverse().join('-')) - new Date(extData[i].dt.split('/').reverse().join('-'))) : 99;
-          const daysMs = diffDays / (1000 * 60 * 60 * 24);
-          
-          if (diffVal <= 0.05 && daysMs <= 5) {
-            match = extData[i];
-            usedExt.add(i);
-            break;
-          }
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
         }
-        concData.push({ nf, ext: match, score: match ? 100 : 0 });
-      });
-      renderConc();
-      log('✅ Conciliação finalizada. Regras: ±R$0,05 e ±5 dias.');
-    }
 
-    function renderConc() {
-      const tb = document.getElementById('tbConc');
-      tb.innerHTML = '';
-      concData.forEach(c => {
-        tb.innerHTML += `<tr>
-          <td>${c.nf.nNF}</td><td>${c.nf.cred}</td><td>${c.nf.dt}</td><td>${fmt(c.nf.val)}</td>
-          <td>${c.ext?.dt || '-'}</td><td>${c.ext ? fmt(c.ext.deb) : '-'}</td>
-          <td><span class="badge ${c.score===100?'badge-ok':'badge-warn'}">${c.score}%</span></td>
-          <td><span class="badge ${c.ext?'badge-ok':'badge-err'}">${c.ext?'Conciliado':'Pendente'}</span></td>
-        </tr>`;
-      });
-    }
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
 
-    // --- RP-12 / DIRD GENERATOR (IN 01/2024) ---
-    function renderDIRD() {
-      const ex = parseInt(document.getElementById('exercicio').value) || 2026;
-      let h = 0, i = 0, j = 0, k = 0, pagar = 0;
-      let rows = {};
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
 
-      concData.forEach(c => {
-        const cat = c.nf.cat;
-        if (!rows[cat]) rows[cat] = { h:0, i:0, j:0, k:0 };
-        const paid = c.ext ? c.nf.val : 0;
-        const unpaid = c.nf.val - paid;
-        
-        if (paid) {
-          // Lógica DIRD: H = Pago no exercício corrente, mas emitido no anterior
-          // I = Pago no exercício corrente, emitido no corrente
-          // Simplificado para caixa: se data pagamento <= exercício atual
-          rows[cat].j += paid;
-          if (c.nf.dt) {
-            const emiYear = parseInt(c.nf.dt.split('/')[2]);
-            if (emiYear < ex) rows[cat].h += paid;
-            else rows[cat].i += paid;
-          } else rows[cat].i += paid;
+        function highlight(e) {
+            dropArea.classList.add('highlight');
         }
-        rows[cat].k += unpaid;
-      });
 
-      let html = `<div class="rp12-print">
-        <h2 style="text-align:center; margin-bottom:10px">DEMONSTRATIVO DE EXECUÇÃO FINANCEIRA (RP-12) / DIRD</h2>
-        <p style="text-align:center; margin-bottom:20px; font-size:0.9rem; color:var(--muted)">
-          ${document.getElementById('razao').value || 'Entidade'} | CNPJ: ${document.getElementById('cnpjEnt').value || '-'} | Convênio/Termo: ${document.getElementById('numInst').value || '-'} | Exercício: ${ex}
-        </p>
-        <table>
-          <thead><tr><th>Categoria / Finalidade</th><th>(H) Desp. Exerc. Ant. Pagas Neste</th><th>(I) Desp. Neste Exerc. Pagas Neste</th><th>(J) Total Pago (H+I)</th><th>(K) A Pagar Ex. Seguintes</th></tr></thead>
-          <tbody>`;
-      
-      for (const cat in rows) {
-        html += `<tr><td>${cat}</td><td style="text-align:right">${fmt(rows[cat].h)}</td><td style="text-align:right">${fmt(rows[cat].i)}</td><td style="text-align:right">${fmt(rows[cat].j)}</td><td style="text-align:right">${fmt(rows[cat].k)}</td></tr>`;
-        h += rows[cat].h; i += rows[cat].i; j += rows[cat].j; k += rows[cat].k;
-      }
-      html += `<tr style="background:#f1f5f9; font-weight:700"><td>TOTAL GERAL</td><td style="text-align:right">${fmt(h)}</td><td style="text-align:right">${fmt(i)}</td><td style="text-align:right">${fmt(j)}</td><td style="text-align:right">${fmt(k)}</td></tr></tbody></table>
-        <p style="margin-top:20px; font-size:0.8rem; color:var(--muted)">
-          ✓ Gerado conforme IN 01/2024 TCE-SP. Valores em R$ com precisão centesimal. Conciliação automática por valor e data. 
-          Assinatura: ${document.getElementById('respLegal').value || 'Responsável Legal'} | ${document.getElementById('cidadeData').value || 'Local/Data'}
-        </p>
-      </div>`;
-      document.getElementById('dirPreview').innerHTML = html;
-    }
+        function unhighlight(e) {
+            dropArea.classList.remove('highlight');
+        }
 
-    function calcRep() {
-      const p = v => parseFloat(v?.replace(/\./g,'').replace(',','.')) || 0;
-      const a = p(document.getElementById('repA').value);
-      const c = p(document.getElementById('repC').value);
-      const d = p(document.getElementById('repD').value);
-      const f = p(document.getElementById('repF').value);
-      document.getElementById('repB').value = fmt(a);
-      document.getElementById('repE').value = fmt(a + c + d);
-      document.getElementById('repG').value = fmt(a + c + d + f);
-    }
+        dropArea.addEventListener('drop', handleDrop, false);
+        fileInput.addEventListener('change', handleFilesFromInput, false);
 
-    function exportJSON() {
-      const data = { entidade: document.getElementById('razao').value, cnpj: document.getElementById('cnpjEnt').value, nf: nfData, conc: concData, dir: document.getElementById('dirPreview').innerText };
-      const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `DIRD_RP12_${document.getElementById('numInst').value || 'backup'}.json`; a.click();
-    }
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiscalFiles(files);
+        }
 
-    // Init
-    log('▶ Sistema DIRD/RP-12 Inicializado. Pronto para automação.');
-  </script>
+        function handleFilesFromInput(e) {
+            const files = e.target.files;
+            handleFiscalFiles(files);
+        }
+
+        async function handleFiscalFiles(files) {
+            for (const file of files) {
+                const listItem = document.createElement('div');
+                listItem.textContent = `Processando: ${file.name} ...`;
+                fileList.appendChild(listItem);
+
+                try {
+                    const nfData = await processFiscalFile(file);
+                    if (nfData) {
+                        listItem.textContent = `Sucesso: ${file.name}`;
+                        addNfToTable(nfData);
+                        processedNFs.push(nfData);
+                    } else {
+                        listItem.textContent = `Erro: ${file.name} - Não foi possível extrair dados.`;
+                    }
+                } catch (error) {
+                    listItem.textContent = `Erro ao processar: ${file.name} - ${error.message}`;
+                    console.error('Erro ao processar arquivo fiscal:', error);
+                }
+            }
+        }
+
+        async function processFiscalFile(file) {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            const reader = new FileReader();
+
+            return new Promise((resolve, reject) => {
+                reader.onload = async (e) => {
+                    const content = e.target.result;
+                    let nfData = null;
+
+                    try {
+                        switch (fileExtension) {
+                            case 'xml':
+                                nfData = parseXml(content);
+                                break;
+                            case 'pdf':
+                                nfData = await parsePdf(file); // PDF.js precisa do File object
+                                break;
+                            case 'csv':
+                                nfData = parseCsvNf(content);
+                                break;
+                            case 'jpg':
+                            case 'jpeg':
+                            case 'png':
+                                nfData = await parseImageOcr(file); // Tesseract.js precisa do File object
+                                break;
+                            default:
+                                reject(new Error(`Formato não suportado: ${fileExtension}`));
+                                return;
+                        }
+                        resolve(nfData);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+
+                if (fileExtension === 'pdf' || fileExtension === 'jpg' || fileExtension === 'jpeg' || fileExtension === 'png') {
+                    reader.readAsArrayBuffer(file); // Para PDF e Imagens, precisamos do ArrayBuffer
+                } else {
+                    reader.readAsText(file);
+                }
+            });
+        }
+
+        function parseXml(xmlString) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+            const infNFe = xmlDoc.querySelector('infNFe');
+
+            if (!infNFe) throw new Error('XML de NF-e inválido ou sem tag infNFe.');
+
+            const ide = infNFe.querySelector('ide');
+            const dest = infNFe.querySelector('dest');
+            const total = infNFe.querySelector('ICMSTot');
+
+            return {
+                emissao: ide.querySelector('dhEmi')?.textContent || ide.querySelector('dEmi')?.textContent || 'N/A',
+                numero: ide.querySelector('nNF')?.textContent || 'N/A',
+                credor: dest.querySelector('xNome')?.textContent || 'N/A',
+                cnpj: dest.querySelector('CNPJ')?.textContent || dest.querySelector('CPF')?.textContent || 'N/A',
+                valor: parseFloat(total.querySelector('vNF')?.textContent || '0'),
+                categoria: 'NF-e XML'
+            };
+        }
+
+        async function parsePdf(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = '';
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const textContent = await page.getTextContent();
+                fullText += textContent.items.map(item => item.str).join(' ') + '\n';
+            }
+
+            console.log('Texto extraído do PDF (para debug):', fullText.substring(0, 500) + '...');
+
+            let nfData = {
+                emissao: 'N/A',
+                numero: 'N/A',
+                credor: 'N/A',
+                cnpj: 'N/A',
+                valor: 0,
+                categoria: 'NF-e PDF'
+            };
+
+            const dateMatch = fullText.match(/(\d{2}\/\d{2}\/\d{4})|(\d{4}-\d{2}-\d{2})/);
+            if (dateMatch) nfData.emissao = dateMatch[1] || dateMatch[2];
+
+            const numeroNfMatch = fullText.match(/(Nº\s*NF|Número\s*da\s*Nota|FATURA):\s*(\d+)/i);
+            if (numeroNfMatch) nfData.numero = numeroNfMatch[2];
+
+            const cnpjMatch = fullText.match(/(CNPJ|CPF):\s*(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/);
+            if (cnpjMatch) nfData.cnpj = cnpjMatch[2];
+
+            const valorMatch = fullText.match(/(Valor\s*Total|Total\s*a\s*Pagar|TOTAL):\s*R\$\s*([\d\.,]+)/i);
+            if (valorMatch) nfData.valor = parseFloat(valorMatch[2].replace(/\./g, '').replace(',', '.'));
+
+            const lines = fullText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            if (lines.length > 0) {
+                const possibleCredor = lines.find(line => !line.match(/nota fiscal|documento auxiliar|danfe|recibo|cnpj|cpf|total/i) && line.length > 10);
+                if (possibleCredor) nfData.credor = possibleCredor.substring(0, 50);
+            }
+            return nfData;
+        }
+
+        function parseCsvNf(csvString) {
+            const results = Papa.parse(csvString, { header: true, skipEmptyLines: true }).data;
+            if (results.length === 0) throw new Error('CSV de NF vazio.');
+
+            const firstRow = results[0];
+            return {
+                emissao: firstRow.DataEmissao || firstRow.Data || 'N/A',
+                numero: firstRow.NumeroNF || firstRow.NF || 'N/A',
+                credor: firstRow.Credor || firstRow.NomeFornecedor || 'N/A',
+                cnpj: firstRow.CNPJCredor || firstRow.CNPJ || 'N/A',
+                valor: parseFloat((firstRow.ValorTotal || firstRow.Valor || '0').replace(',', '.')),
+                categoria: 'NF-e CSV'
+            };
+        }
+
+        async function parseImageOcr(file) {
+            const { data: { text } } = await Tesseract.recognize(
+                file,
+                'por',
+                { logger: m => console.log('OCR Progress:', m.status, m.progress) }
+            );
+
+            console.log('Texto extraído da imagem (OCR para debug):', text.substring(0, 500) + '...');
+
+            let nfData = {
+                emissao: 'N/A',
+                numero: 'N/A',
+                credor: 'N/A',
+                cnpj: 'N/A',
+                valor: 0,
+                categoria: 'NF-e Imagem (OCR)'
+            };
+
+            const dateMatch = text.match(/(\d{2}\/\d{2}\/\d{4})|(\d{4}-\d{2}-\d{2})/);
+            if (dateMatch) nfData.emissao = dateMatch[1] || dateMatch[2];
+
+            const numeroNfMatch = text.match(/(Nº\s*NF|Número\s*da\s*Nota|FATURA):\s*(\d+)/i);
+            if (numeroNfMatch) nfData.numero = numeroNfMatch[2];
+
+            const cnpjMatch = text.match(/(CNPJ|CPF):\s*(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/);
+            if (cnpjMatch) nfData.cnpj = cnpjMatch[2];
+
+            const valorMatch = text.match(/(Valor\s*Total|Total\s*a\s*Pagar|TOTAL):\s*R\$\s*([\d\.,]+)/i);
+            if (valorMatch) nfData.valor = parseFloat(valorMatch[2].replace(/\./g, '').replace(',', '.'));
+
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            if (lines.length > 0) {
+                const possibleCredor = lines.find(line => !line.match(/nota fiscal|documento auxiliar|danfe|recibo|cnpj|cpf|total/i) && line.length > 10);
+                if (possibleCredor) nfData.credor = possibleCredor.substring(0, 50);
+            }
+            return nfData;
+        }
+
+        function addNfToTable(nfData) {
+            const newRow = nfTableBody.insertRow();
+            newRow.insertCell().textContent = nfTableBody.rows.length;
+            newRow.insertCell().textContent = nfData.emissao || 'N/A';
+            newRow.insertCell().textContent = nfData.numero || 'N/A';
+            newRow.insertCell().textContent = nfData.credor || 'N/A';
+            newRow.insertCell().textContent = nfData.cnpj || 'N/A';
+            newRow.insertCell().textContent = formatCurrency(nfData.valor);
+            newRow.insertCell().textContent = nfData.categoria || 'N/A';
+            newRow.insertCell().innerHTML = '<button onclick="editNf(this)">Editar</button> <button onclick="deleteNf(this)">Excluir</button>';
+        }
+
+        function editNf(button) {
+            alert('Funcionalidade de edição ainda não implementada no MVP.');
+        }
+
+        function deleteNf(button) {
+            const row = button.closest('tr');
+            const rowIndex = row.rowIndex - 1;
+            processedNFs.splice(rowIndex, 1);
+            row.remove();
+            alert('NF excluída.');
+        }
+
+        // --- Lógica para a seção de Extrato ---
+        const dropAreaExtrato = document.getElementById('drop-area-extrato');
+        const fileInputExtrato = document.getElementById('fileInputExtrato');
+        const fileListExtrato = document.getElementById('fileListExtrato');
+        const extratoTableBody = document.querySelector('#extratoTable tbody');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropAreaExtrato.addEventListener(eventName, preventDefaults, false);
+        });
+        dropAreaExtrato.addEventListener('drop', handleDropExtrato, false);
+        fileInputExtrato.addEventListener('change', handleFilesFromInputExtrato, false);
+
+        function handleDropExtrato(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleExtratoFiles(files);
+        }
+
+        function handleFilesFromInputExtrato(e) {
+            const files = e.target.files;
+            handleExtratoFiles(files);
+        }
+
+        async function handleExtratoFiles(files) {
+            for (const file of files) {
+                const listItem = document.createElement('div');
+                listItem.textContent = `Processando extrato: ${file.name} ...`;
+                fileListExtrato.appendChild(listItem);
+
+                try {
+                    const extratoData = await processExtratoFile(file);
+                    if (extratoData && extratoData.length > 0) {
+                        listItem.textContent = `Sucesso: ${file.name} (${extratoData.length} lançamentos)`;
+                        extratoData.forEach(lancamento => addExtratoToTable(lancamento));
+                        processedExtratos = processedExtratos.concat(extratoData);
+                    } else {
+                        listItem.textContent = `Erro: ${file.name} - Não foi possível extrair lançamentos.`;
+                    }
+                } catch (error) {
+                    listItem.textContent = `Erro ao processar extrato: ${file.name} - ${error.message}`;
+                    console.error('Erro ao processar extrato:', error);
+                }
+            }
+        }
+
+        async function processExtratoFile(file) {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            const reader = new FileReader();
+
+            return new Promise((resolve, reject) => {
+                reader.onload = async (e) => {
+                    const content = e.target.result;
+                    let extratoData = null;
+
+                    try {
+                        switch (fileExtension) {
+                            case 'ofx':
+                                extratoData = parseOfx(content);
+                                break;
+                            case 'csv':
+                                extratoData = parseCsvExtrato(content);
+                                break;
+                            case 'txt':
+                                extratoData = parseTxtExtrato(content);
+                                break;
+                            default:
+                                reject(new Error(`Formato não suportado para extrato: ${fileExtension}`));
+                                return;
+                        }
+                        resolve(extratoData);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        function parseOfx(ofxString) {
+            const extratoLancamentos = [];
+            // Regex simples para extrair transações. OFX é complexo, isso é um MVP.
+            const transactionMatches = ofxString.matchAll(/<STMTTRN>([\s\S]*?)<\/STMTTRN>/g);
+
+            for (const match of transactionMatches) {
+                const trn = match[1];
+                const dateMatch = trn.match(/<DTPOSTED>(\d{8})/);
+                const typeMatch = trn.match(/<TRNTYPE>(.*?)</);
+                const amountMatch = trn.match(/<TRNAMT>([\d.-]+)/);
+                const memoMatch = trn.match(/<MEMO>(.*?)</);
+                const fitidMatch = trn.match(/<FITID>(.*?)</);
+
+                const amount = parseFloat(amountMatch ? amountMatch[1] : '0');
+
+                extratoLancamentos.push({
+                    data: dateMatch ? new Date(dateMatch[1].substring(0, 4), dateMatch[1].substring(4, 6) - 1, dateMatch[1].substring(6, 8)).toLocaleDateString('pt-BR') : 'N/A',
+                    historico: memoMatch ? memoMatch[1] : 'N/A',
+                    doc: fitidMatch ? fitidMatch[1] : 'N/A',
+                    debito: amount < 0 ? Math.abs(amount) : 0,
+                    credito: amount > 0 ? amount : 0,
+                    conciliado: false
+                });
+            }
+            return extratoLancamentos;
+        }
+
+        function parseCsvExtrato(csvString) {
+            const results = Papa.parse(csvString, { header: true, skipEmptyLines: true }).data;
+            if (results.length === 0) throw new Error('CSV de extrato vazio.');
+
+            return results.map(row => ({
+                data: row.Data || row.DATE || 'N/A',
+                historico: row.Historico || row.DESCRIPTION || 'N/A',
+                doc: row.Documento || row.DOC || 'N/A',
+                debito: parseFloat((row.Debito || row.DEBIT || '0').replace(',', '.')),
+                credito: parseFloat((row.Credito || row.CREDIT || '0').replace(',', '.')),
+                conciliado: false
+            }));
+        }
+
+        function parseTxtExtrato(txtString) {
+            // Este é um parser TXT genérico e muito básico.
+            // Extratos TXT variam MUITO entre bancos.
+            // Para um MVP, pode ser necessário pedir ao usuário para formatar o TXT ou aceitar que será impreciso.
+            const lines = txtString.split('\n').filter(line => line.trim().length > 0);
+            const extratoLancamentos = [];
+
+            lines.forEach(line => {
+                // Exemplo: "01/01/2024 - Pagamento NF 123 - R$ 1500,00"
+                const match = line.match(/(\d{2}\/\d{2}\/\d{4})\s*-\s*(.*?)\s*-\s*R\$\s*([\d\.,]+)/);
+                if (match) {
+                    const amount = parseFloat(match[3].replace(/\./g, '').replace(',', '.'));
+                    extratoLancamentos.push({
+                        data: match[1],
+                        historico: match[2].trim(),
+                        doc: 'N/A', // TXT geralmente não tem ID de documento
+                        debito: amount > 0 ? amount : 0, // Assumindo que valores positivos são débitos neste formato
+                        credito: amount < 0 ? Math.abs(amount) : 0,
+                        conciliado: false
+                    });
+                }
+            });
+            return extratoLancamentos;
+        }
+
+        function addExtratoToTable(lancamento) {
+            const newRow = extratoTableBody.insertRow();
+            newRow.insertCell().textContent = extratoTableBody.rows.length;
+            newRow.insertCell().textContent = lancamento.data || 'N/A';
+            newRow.insertCell().textContent = lancamento.historico || 'N/A';
+            newRow.insertCell().textContent = lancamento.doc || 'N/A';
+            newRow.insertCell().textContent = formatCurrency(lancamento.debito);
+            newRow.insertCell().textContent = formatCurrency(lancamento.credito);
+            newRow.insertCell().textContent = lancamento.conciliado ? 'Sim' : 'Não';
+        }
+
+        // --- Lógica para a seção de Conciliação ---
+        function executarConciliacao() {
+            document.getElementById('conciliacaoStatus').textContent = '⚡ Executando conciliação...';
+            document.getElementById('conciliacaoStatus').className = 'status-info';
+            const conciliacaoTableBody = document.querySelector('#conciliacaoTable tbody');
+            conciliacaoTableBody.innerHTML = ''; // Limpa a tabela anterior
+
+            const conciliados = new Set(); // Para evitar conciliar o mesmo extrato várias vezes
+
+            processedNFs.forEach(nf => {
+                let matched = false;
+                let bestMatch = null;
+                let bestDiffDays = Infinity;
+
+                processedExtratos.forEach((extrato, index) => {
+                    if (conciliados.has(index)) return; // Já conciliado
+
+                    const nfDate = parseDate(nf.emissao);
+                    const extratoDate = parseDate(extrato.data);
+
+                    if (!nfDate || !extratoDate) return; // Não consegue comparar datas inválidas
+
+                    const diffTime = Math.abs(nfDate.getTime() - extratoDate.getTime());
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    // Critério de conciliação: valor próximo e data dentro de 7 dias
+                    if (Math.abs(nf.valor - extrato.debito) < 0.01 && diffDays <= 7) {
+                        if (diffDays < bestDiffDays) { // Encontra o melhor match (data mais próxima)
+                            bestDiffDays = diffDays;
+                            bestMatch = { extrato, index };
+                        }
+                    }
+                });
+
+                if (bestMatch) {
+                    const extrato = bestMatch.extrato;
+                    const extratoIndex = bestMatch.index;
+                    const newRow = conciliacaoTableBody.insertRow();
+                    newRow.insertCell().textContent = nf.numero;
+                    newRow.insertCell().textContent = nf.credor;
+                    newRow.insertCell().textContent = nf.emissao;
+                    newRow.insertCell().textContent = formatCurrency(nf.valor);
+                    newRow.insertCell().textContent = extrato.data;
+                    newRow.insertCell().textContent = formatCurrency(extrato.debito);
+                    newRow.insertCell().textContent = 'Conciliado';
+                    conciliados.add(extratoIndex); // Marca o extrato como conciliado
+                    matched = true;
+                }
+
+                if (!matched) {
+                    const newRow = conciliacaoTableBody.insertRow();
+                    newRow.insertCell().textContent = nf.numero;
+                    newRow.insertCell().textContent = nf.credor;
+                    newRow.insertCell().textContent = nf.emissao;
+                    newRow.insertCell().textContent = formatCurrency(nf.valor);
+                    newRow.insertCell().textContent = 'N/A';
+                    newRow.insertCell().textContent = 'N/A';
+                    newRow.insertCell().textContent = 'Não Conciliado';
+                }
+            });
+
+            document.getElementById('conciliacaoStatus').textContent = '✅ Conciliação concluída!';
+            document.getElementById('conciliacaoStatus').className = 'status-success';
+        }
+
+        // --- Lógica para a seção DIRD / RP-12 (desabilitada no MVP) ---
+        function exportarPdf() {
+            alert('Funcionalidade de exportar PDF ainda não implementada no MVP.');
+        }
+
+        function backupJson() {
+            alert('Funcionalidade de backup JSON ainda não implementada no MVP.');
+        }
+
+    </script>
 </body>
 </html>
